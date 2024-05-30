@@ -1,0 +1,88 @@
+class User
+  include ActiveModel::Model
+  attr_accessor :id, :username, :email, :password_digest, :bio, :image
+
+  def save
+    bucket = Rails.application.config.couchbase_bucket
+    self.id ||= SecureRandom.uuid
+    bucket.default_collection.upsert(id, to_hash)
+  end
+
+  def to_hash
+    {
+      'username' => username,
+      'email' => email,
+      'password_digest' => password_digest,
+      'bio' => bio,
+      'image' => image
+    }
+  end
+
+  def self.find_by_email(email)
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails` WHERE `email` = $1 LIMIT 1"
+    result = cluster.query(query, [email])
+    User.new(result.rows.first) if result.rows.any?
+  end
+
+  def follow(user)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    collection.mutate_in(id, [
+      Couchbase::MutateInSpec.array_add_unique('following', user.id)
+    ])
+  end
+
+  def unfollow(user)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    collection.mutate_in(id, [
+      Couchbase::MutateInSpec.array_remove('following', user.id)
+    ])
+  end
+
+  def following?(user)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    result = collection.lookup_in(id, [
+      Couchbase::LookupInSpec.get('following')
+    ])
+    result.content(0).include?(user.id)
+  end
+
+  def favorite(article)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    collection.mutate_in(id, [
+      Couchbase::MutateInSpec.array_add_unique('favorites', article.id)
+    ])
+  end
+
+  def unfavorite(article)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    collection.mutate_in(id, [
+      Couchbase::MutateInSpec.array_remove('favorites', article.id)
+    ])
+  end
+
+  def favorited?(article)
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    result = collection.lookup_in(id, [
+      Couchbase::LookupInSpec.get('favorites')
+    ])
+    result.content(0).include?(article.id)
+  end
+
+  def articles
+    Article.where(author_id: id)
+  end
+
+  def feed
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails-rails` WHERE `author_id` IN $1 ORDER BY `createdAt` DESC"
+    result = cluster.query(query, [following])
+    result.rows.map { |row| Article.new(row) }
+  end
+end
