@@ -12,8 +12,9 @@ class ArticlesController < ApplicationController
   end
 
   def create
-    article = current_user.articles.new(article_params)
-    article.slug = generate_slug(article.title)
+    article = Article.new(article_params)
+    article.author_id = current_user.id
+    article.slug = article.generate_slug(article.title)
     if article.save
       render json: { article: article.to_hash }, status: :created
     else
@@ -57,9 +58,5 @@ class ArticlesController < ApplicationController
 
   def article_params
     params.require(:article).permit(:title, :description, :body, tagList: [])
-  end
-
-  def generate_slug(title)
-    title.parameterize
   end
 end
