@@ -2,7 +2,12 @@ class Article
   include ActiveModel::Model
   attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type
 
+  validates :title, presence: true
+  validates :body, presence: true
+  validates :author_id, presence: true
+
   def save
+    validate!
     bucket = Rails.application.config.couchbase_bucket
     self.id ||= SecureRandom.uuid
     self.slug ||= generate_slug(title)
@@ -69,5 +74,9 @@ class Article
 
   def generate_slug(title)
     title.parameterize
+  end
+
+  def validate!
+    raise ActiveModel::ValidationError, self if invalid?
   end
 end

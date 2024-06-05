@@ -2,7 +2,12 @@ class User
   include ActiveModel::Model
   attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type
 
+  validates :username, presence: true
+  validates :email, presence: true
+  validates :password_digest, presence: true
+
   def save
+    validate!
     bucket = Rails.application.config.couchbase_bucket
     self.id ||= SecureRandom.uuid
     bucket.default_collection.upsert(id, to_hash)
@@ -91,5 +96,9 @@ class User
     query = "SELECT META().id, * FROM `realworld-rails-rails` WHERE `author_id` IN $1 ORDER BY `createdAt` DESC"
     result = cluster.query(query, [following])
     result.rows.map { |row| Article.new(row) }
+  end
+
+  def validate!
+    raise ActiveModel::ValidationError, self if invalid?
   end
 end
