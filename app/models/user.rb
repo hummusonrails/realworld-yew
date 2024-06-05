@@ -13,6 +13,13 @@ class User
     bucket.default_collection.upsert(id, to_hash)
   end
 
+  def update(attributes)
+    attributes.each do |key, value|
+      public_send("#{key}=", value)
+    end
+    save
+  end
+
   def to_hash
     {
       'type' => 'user',
