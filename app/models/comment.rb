@@ -14,6 +14,11 @@ class Comment
     bucket.default_collection.upsert(id, to_hash)
   end
 
+  def destroy
+    bucket = Rails.application.config.couchbase_bucket
+    bucket.default_collection.remove(id)
+  end
+
   def to_hash
     {
       'type' => 'comment',
@@ -23,6 +28,13 @@ class Comment
       'updated_at' => updated_at,
       'article_id' => article_id
     }
+  end
+
+  def self.find(id)
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1"
+    result = cluster.query(query, [id])
+    Comment.new(result.rows.first) if result.rows.any?
   end
 
   def validate!

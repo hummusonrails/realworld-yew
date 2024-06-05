@@ -32,9 +32,10 @@ class User
   end
 
   def self.find(id)
-    bucket = Rails.application.config.couchbase_bucket
-    result = bucket.default_collection.get(id)
-    User.new(result.content.merge(id: id)) if result.success?
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'user' AND `id` = $1 LIMIT 1"
+    result = cluster.query(query, [id])
+    User.new(result.rows.first) if result.rows.any?
   end
 
   def self.find_by_email(email)
