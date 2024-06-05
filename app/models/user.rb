@@ -44,6 +44,13 @@ class User
     User.new(result.rows.first) if result.rows.any?
   end
 
+  def self.find_by_username(username)
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails` WHERE `username` = $1 LIMIT 1"
+    result = cluster.query(query, [username])
+    User.new(result.rows.first) if result.rows.any?
+  end
+
   def follow(user)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
