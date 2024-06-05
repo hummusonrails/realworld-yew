@@ -15,7 +15,7 @@ class User
 
   def update(attributes)
     attributes.each do |key, value|
-      public_send("#{key}=", value)
+      send("#{key}=", value)
     end
     save
   end
