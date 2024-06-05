@@ -1,6 +1,6 @@
 class User
   include ActiveModel::Model
-  attr_accessor :id, :username, :email, :password_digest, :bio, :image
+  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type
 
   def save
     bucket = Rails.application.config.couchbase_bucket
@@ -10,6 +10,7 @@ class User
 
   def to_hash
     {
+      'type' => 'user',
       'username' => username,
       'email' => email,
       'password_digest' => password_digest,

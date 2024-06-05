@@ -1,6 +1,6 @@
 class Tag
   include ActiveModel::Model
-  attr_accessor :name
+  attr_accessor :name, :type
 
   def save
     bucket = Rails.application.config.couchbase_bucket
@@ -9,6 +9,9 @@ class Tag
   end
 
   def to_hash
-    { 'name' => name }
+    {
+      'name' => name,
+      'type' => 'tag'
+    }
   end
 end
