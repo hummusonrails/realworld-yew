@@ -44,7 +44,7 @@ RSpec.describe Tag, type: :model do
         ))
         tag.save
 
-        allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE META().id = $1 AND `type` = 'tag'", [tag.id]).and_return(instance_double(Couchbase::Cluster::QueryResult, rows: [tag.to_hash]))
+        allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE META().id = $1 AND `type` = 'tag'", [tag.id]).and_return(instance_double(Couchbase::Cluster::QueryResult, rows: [tag.to_hash]))
 
         expect(Tag.find(tag.id).name).to eq('Updated Tag')
       end

@@ -32,7 +32,7 @@ class Comment
 
   def self.find(id)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1"
     result = cluster.query(query, [id])
     Comment.new(result.rows.first) if result.rows.any?
   end

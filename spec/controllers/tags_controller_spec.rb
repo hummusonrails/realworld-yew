@@ -16,7 +16,7 @@ RSpec.describe TagsController, type: :controller do
 
   describe 'GET #index' do
     it 'returns all tags' do
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'tag'").and_return(query_result)
+      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'tag'").and_return(query_result)
 
       get :index
 

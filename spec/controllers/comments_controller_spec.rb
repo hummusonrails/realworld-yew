@@ -25,8 +25,8 @@ RSpec.describe CommentsController, type: :controller do
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => user.id }])
     request.headers['Authorization'] = "Bearer #{token}"
 
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'user' AND `id` = $1 LIMIT 1", anything).and_return(query_result_user)
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1", anything).and_return(query_result_comment)
+    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'user' AND `id` = $1 LIMIT 1", anything).and_return(query_result_user)
+    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1", anything).and_return(query_result_comment)
   end
 
   describe 'GET #index' do
