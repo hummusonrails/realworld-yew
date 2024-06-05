@@ -73,7 +73,8 @@ class Article
   end
 
   def generate_slug(title)
-    title.parameterize
+    return nil if title.nil?
+    @slug ||= title.parameterize(separator: '-')
   end
 
   def validate!
