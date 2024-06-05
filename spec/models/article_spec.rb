@@ -78,6 +78,7 @@ RSpec.describe Article, type: :model do
   context 'when dealing with comments' do
     before do
       allow(collection).to receive(:upsert).with(comment.id, hash_including(
+        'type' => 'comment',
         'author_id' => 'author-id',
         'body' => 'Test Comment',
         'article_id' => article.id

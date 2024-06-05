@@ -12,6 +12,7 @@ class Comment
 
   def to_hash
     {
+      'type' => 'comment',
       'body' => body,
       'author_id' => author_id,
       'created_at' => created_at,
