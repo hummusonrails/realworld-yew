@@ -1,5 +1,5 @@
 class ArticlesController < ApplicationController
-  before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite]
+  before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
     articles = Article.all
@@ -7,7 +7,7 @@ class ArticlesController < ApplicationController
   end
 
   def show
-    article = Article.find_by_slug(params[:slug])
+    article = Article.find_by_slug(params[:id])
     render json: { article: article.to_hash }
   end
 
@@ -23,7 +23,7 @@ class ArticlesController < ApplicationController
   end
 
   def update
-    article = current_user.articles.find_by_slug(params[:slug])
+    article = current_user.find_article_by_slug(params[:id])
     if article.update(article_params)
       render json: { article: article.to_hash }
     else
@@ -32,7 +32,7 @@ class ArticlesController < ApplicationController
   end
 
   def destroy
-    article = current_user.articles.find_by_slug(params[:slug])
+    article = current_user.articles.find_by_slug(params[:id])
     article.destroy
     head :no_content
   end
@@ -43,13 +43,13 @@ class ArticlesController < ApplicationController
   end
 
   def favorite
-    article = Article.find_by_slug(params[:slug])
+    article = Article.find_by_slug(params[:id])
     current_user.favorite(article)
     render json: { article: article.to_hash }
   end
 
   def unfavorite
-    article = Article.find_by_slug(params[:slug])
+    article = Article.find_by_slug(params[:id])
     current_user.unfavorite(article)
     render json: { article: article.to_hash }
   end
@@ -58,5 +58,17 @@ class ArticlesController < ApplicationController
 
   def article_params
     params.require(:article).permit(:title, :description, :body, tagList: [])
+  end
+
+  def authenticate_user
+    token = request.headers['Authorization'].split(' ').last
+    decoded = JWT.decode(token, Rails.application.secret_key_base).first
+    @current_user = User.find(decoded['user_id'])
+  rescue
+    render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+  end
+
+  def current_user
+    @current_user
   end
 end

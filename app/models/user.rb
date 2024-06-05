@@ -102,8 +102,21 @@ class User
   end
 
   def articles
-    Article.where(author_id: id)
+    cluster = Rails.application.config.couchbase_cluster
+    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'article' AND `author_id` = $1"
+    result = cluster.query(query, [id])
+    result.rows.map { |row| Article.new(row) }
   end
+
+  def find_article_by_slug(slug)
+    cluster = Rails.application.config.couchbase_cluster
+    options = Cluster::QueryOptions.new
+    options.positional_parameters(["param1", "param2"])
+    # query = "SELECT META().id, * FROM `realworld-rails` WHERE `slug` = $1 AND `author_id` = $2 LIMIT 1"
+    result = cluster.query("SELECT META().id, * FROM `realworld-rails` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", options)
+    Article.new(result.rows.first) if result.rows.any?
+  end
+
 
   def feed
     cluster = Rails.application.config.couchbase_cluster

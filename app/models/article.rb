@@ -16,6 +16,18 @@ class Article
     bucket.default_collection.upsert(id, to_hash)
   end
 
+  def update(attributes)
+    attributes.each do |key, value|
+      send("#{key}=", value)
+    end
+    save
+  end
+
+  def destroy
+    bucket = Rails.application.config.couchbase_bucket
+    bucket.default_collection.remove(id)
+  end
+
   def to_hash
     {
       'slug' => slug,
