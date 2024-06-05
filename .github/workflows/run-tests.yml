@@ -1,0 +1,14 @@
+name: Run Test Suite
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+        - uses: actions/checkout@v4
+        - uses: ruby/setup-ruby@v1
+          with:
+            ruby-version: '3.3.1' # Not needed with a .ruby-version file
+            bundler-cache: true
+            run: bundle install && bundle exec rspec

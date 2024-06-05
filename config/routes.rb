@@ -22,7 +22,11 @@ Rails.application.routes.draw do
       post 'favorite', to: 'articles#favorite'
       delete 'favorite', to: 'articles#unfavorite'
     end
-    resources :comments, only: [:create, :destroy, :index]
+    resources :comments, only: [:create, :destroy, :index], param: :id do
+      member do
+        delete '', to: 'comments#destroy'
+      end
+    end
   end
 
   resources :tags, only: [:index]
