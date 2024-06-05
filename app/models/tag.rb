@@ -22,7 +22,16 @@ class Tag
     cluster = Rails.application.config.couchbase_cluster
     query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'tag'"
     result = cluster.query(query)
-    result.rows.map { |row| Tag.new(row) }
+    puts result.rows
+    if result.rows.any? || result.rows.blank?
+      result.rows.map do |row|
+        tag_data = row["_default"]
+        tag_data["id"] = row["id"]
+        Tag.new(tag_data)
+      end
+    else
+      []
+    end
   end
 
   def self.count

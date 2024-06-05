@@ -2,8 +2,8 @@ class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    articles = Article.all
-    render json: { articles: articles.map(&:to_hash), articlesCount: articles.count }
+    articles = Article.all || []
+    tags = Tag.all || []
   end
 
   def show
@@ -58,17 +58,5 @@ class ArticlesController < ApplicationController
 
   def article_params
     params.require(:article).permit(:title, :description, :body, tagList: [])
-  end
-
-  def authenticate_user
-    token = request.headers['Authorization'].split(' ').last
-    decoded = JWT.decode(token, Rails.application.secret_key_base).first
-    @current_user = User.find(decoded['user_id'])
-  rescue
-    render json: { errors: ['Not Authenticated'] }, status: :unauthorized
-  end
-
-  def current_user
-    @current_user
   end
 end

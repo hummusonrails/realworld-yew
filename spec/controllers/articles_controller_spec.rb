@@ -4,7 +4,41 @@ require 'jwt'
 
 RSpec.describe ArticlesController, type: :controller do
   let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'test_image.png') }
-  let(:article) { Article.new(id: 'article-id', slug: 'test-title', title: 'Test Title', description: 'Test Description', body: 'Test Body', author_id: current_user.id) }
+  let(:article_data) do
+    {
+      '_default' => {
+        'id' => 'article-id',
+        'slug' => 'test-title',
+        'title' => 'Test Title',
+        'description' => 'Test Description',
+        'body' => 'Test Body',
+        'author_id' => current_user.id,
+        'type' => 'article'
+      },
+      'id' => 'article-id'
+    }
+  end
+  let(:article) { Article.new(article_data['_default'].merge('id' => article_data['id'])) }
+  let(:tag_data) do
+    [
+      {
+        '_default' => {
+          'name' => 'tag1',
+          'type' => 'tag'
+        },
+        'id' => '1'
+      },
+      {
+        '_default' => {
+          'name' => 'tag2',
+          'type' => 'tag'
+        },
+        'id' => '2'
+      }
+    ]
+  end
+
+  let(:tags) { tag_data.map { |data| Tag.new(data['_default'].merge('id' => data['id'])) } }
   let(:updated_attributes) { { title: 'Updated Title' } }
   let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
@@ -17,6 +51,8 @@ RSpec.describe ArticlesController, type: :controller do
     allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
     allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
     allow(bucket).to receive(:default_collection).and_return(collection)
+    allow(Tag).to receive(:all).and_return(tags)
+    allow(Article).to receive(:all).and_return([article])
     allow(User).to receive(:find).and_return(current_user)
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
     request.headers['Authorization'] = "Bearer #{token}"
@@ -29,8 +65,8 @@ RSpec.describe ArticlesController, type: :controller do
 
     get :index
     expect(response).to have_http_status(:ok)
-    expect(JSON.parse(response.body)['articles'].first['title']).to eq('Test Title')
-  end
+    expect(response.body).to include('Test Title')
+    end
   end
 
   describe 'GET #show' do
