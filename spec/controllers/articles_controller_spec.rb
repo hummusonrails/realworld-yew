@@ -86,7 +86,7 @@ RSpec.describe ArticlesController, type: :controller do
       allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
       allow(collection).to receive(:upsert).and_return(true)
 
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
+      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
 
       allow(article).to receive(:update).and_call_original
 
@@ -100,7 +100,7 @@ RSpec.describe ArticlesController, type: :controller do
 
     it 'returns an error if the article cannot be updated' do
       allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM `realworld-rails` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
+      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
 
       allow(collection).to receive(:upsert).and_return(false)
 

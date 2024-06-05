@@ -33,21 +33,21 @@ class User
 
   def self.find(id)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'user' AND `id` = $1 LIMIT 1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'user' AND `id` = $1 LIMIT 1"
     result = cluster.query(query, [id])
     User.new(result.rows.first) if result.rows.any?
   end
 
   def self.find_by_email(email)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `email` = $1 LIMIT 1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `email` = $1 LIMIT 1"
     result = cluster.query(query, [email])
     User.new(result.rows.first) if result.rows.any?
   end
 
   def self.find_by_username(username)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `username` = $1 LIMIT 1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `username` = $1 LIMIT 1"
     result = cluster.query(query, [username])
     User.new(result.rows.first) if result.rows.any?
   end
@@ -104,7 +104,7 @@ class User
 
   def articles
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'article' AND `author_id` = $1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = $1"
     result = cluster.query(query, [id])
     result.rows.map { |row| Article.new(row) }
   end
@@ -113,15 +113,15 @@ class User
     cluster = Rails.application.config.couchbase_cluster
     options = Cluster::QueryOptions.new
     options.positional_parameters(["param1", "param2"])
-    # query = "SELECT META().id, * FROM `realworld-rails` WHERE `slug` = $1 AND `author_id` = $2 LIMIT 1"
-    result = cluster.query("SELECT META().id, * FROM `realworld-rails` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", options)
+    # query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = $1 AND `author_id` = $2 LIMIT 1"
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", options)
     Article.new(result.rows.first) if result.rows.any?
   end
 
 
   def feed
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails-rails` WHERE `author_id` IN $1 ORDER BY `createdAt` DESC"
+    query = "SELECT META().id, * FROM `RealWorldRailsBucket-rails` WHERE `author_id` IN $1 ORDER BY `createdAt` DESC"
     result = cluster.query(query, [following])
     result.rows.map { |row| Article.new(row) }
   end

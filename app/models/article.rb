@@ -44,21 +44,21 @@ class Article
 
   def self.find_by_slug(slug)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `slug` = $1 LIMIT 1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = $1 LIMIT 1"
     result = cluster.query(query, [slug])
     Article.new(result.rows.first) if result.rows.any?
   end
 
   def self.all
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'article'"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'"
     result = cluster.query(query)
     result.rows.map { |row| Article.new(row) }
   end
 
   def comments
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `realworld-rails` WHERE `type` = 'comment' AND `article_id` = $1"
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = $1"
     result = cluster.query(query, [id])
     result.rows.map { |row| Comment.new(row) }
   end
