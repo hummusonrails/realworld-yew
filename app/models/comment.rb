@@ -1,6 +1,6 @@
 class Comment
   include ActiveModel::Model
-  attr_accessor :id, :body, :author_id, :created_at, :updated_at, :article_id
+  attr_accessor :id, :body, :author_id, :created_at, :updated_at, :article_id, :type
 
   def save
     bucket = Rails.application.config.couchbase_bucket

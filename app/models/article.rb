@@ -1,6 +1,6 @@
 class Article
   include ActiveModel::Model
-  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id
+  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type
 
   def save
     bucket = Rails.application.config.couchbase_bucket
@@ -20,7 +20,8 @@ class Article
       'tag_list' => tag_list,
       'created_at' => created_at,
       'updated_at' => updated_at,
-      'author_id' => author_id
+      'author_id' => author_id,
+      'type' => 'article'
     }
   end
 

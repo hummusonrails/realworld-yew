@@ -22,6 +22,7 @@ RSpec.describe Article, type: :model do
     describe '#save' do
       it 'creates a new article record in the database' do
         allow(collection).to receive(:upsert).with(article.id, hash_including(
+          'type' => 'article',
           'author_id' => 'author-id',
           'body' => 'Test Body',
           'description' => 'Test Description',
@@ -40,6 +41,7 @@ RSpec.describe Article, type: :model do
     describe '#to_hash' do
       it 'returns the article attributes as a hash' do
         expected_hash = {
+          'type' => 'article',
           'slug' => article.slug,
           'title' => 'Test Title',
           'description' => 'Test Description',
