@@ -1,16 +1,25 @@
-name: Run Test Suite
-on: [push, pull_request]
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3.1' # Not needed with a .ruby-version file
+          ruby-version: .ruby-version
           bundler-cache: true
-      - name: Install dependencies
-        run: bundle install
+
       - name: Run tests
-        run: bundle exec rspec
+        env:
+          RAILS_ENV: test
+        run: bin/rails spec
