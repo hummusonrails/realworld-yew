@@ -72,7 +72,8 @@ class Article
   end
 
   def tags
-    tag_list ? tag_list.split(',').map(&:strip) : []
+    return [] if tag_list.blank?
+    tag_list.is_a?(String) ? tag_list.split(',').map(&:strip) : tag_list
   end
 
   def add_tag(tag)

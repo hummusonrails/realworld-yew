@@ -57,29 +57,27 @@ class UsersController < ApplicationController
   end
 
   def show
-    user = User.find_by_username(params[:username])
-    if user.nil?
+    if current_user
+      @profile = Profile.new(current_user.to_hash.merge(following: current_user&.following?(current_user)))
+      @articles = current_user.articles
+
+      respond_to do |format|
+        format.html { render :show }
+        format.json { render json: { profile: @profile.to_hash } }
+      end
+    else
       respond_to do |format|
         format.html { redirect_to root_path, alert: 'User not found' }
         format.json { render json: { errors: ['User not found'] }, status: :not_found }
       end
-      return
-    end
-
-    @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
-    @articles = user.articles
-
-    respond_to do |format|
-      format.html
-      format.json { render json: { profile: @profile.to_hash } }
     end
   end
 
   def update
-    if current_user.update(user_params)
+    if current_user && current_user.update(user_params)
       render json: { user: current_user.to_hash }
     else
-      render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: ['User not authenticated'] }, status: :unprocessable_entity
     end
   end
 
