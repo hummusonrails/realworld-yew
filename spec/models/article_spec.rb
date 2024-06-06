@@ -78,8 +78,8 @@ RSpec.describe Article, type: :model do
       it 'returns all articles' do
         articles = Article.all
         expect(articles).to be_an(Array)
-        expect(articles[0].first).to be_a(Article)
-        expect(articles[0].first.title).to eq('Test Title')
+        expect(articles.first).to be_a(Article)
+        expect(articles.first.title).to eq('Test Title')
       end
     end
   end
