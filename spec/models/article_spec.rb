@@ -49,7 +49,8 @@ RSpec.describe Article, type: :model do
           'tag_list' => 'tag1,tag2',
           'created_at' => article.created_at,
           'updated_at' => article.updated_at,
-          'author_id' => article.author_id
+          'author_id' => article.author_id,
+          'favorites' => []
         }
         expect(article.to_hash).to eq(expected_hash)
       end
