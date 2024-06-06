@@ -9,12 +9,18 @@ RSpec.describe Article, type: :model do
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
-  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: []) }
+  let(:options) do
+    instance_double(Couchbase::Options::Query, positional_parameters: ['test-title'])
+  end
+  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => { 'title' => 'Test Title', 'description' => 'Test Description', 'body' => 'Test Body', 'author_id' => 'user-id', 'type' => 'article' }, 'id' => 'article-id' }]) }
 
   before do
     allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
     allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
     allow(bucket).to receive(:default_collection).and_return(collection)
+    allow(Couchbase::Options::Query).to receive(:new).and_return(options)
+    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options).and_return(query_result)
+    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'").and_return(query_result)
     allow(User).to receive(:find).with('author-id').and_return(author)
   end
 
@@ -60,10 +66,9 @@ RSpec.describe Article, type: :model do
   context 'when finding an article by slug' do
     describe '.find_by_slug' do
       it 'finds an article by slug' do
-        query_result = instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash])
-        allow(cluster).to receive(:query).and_return(query_result)
-        found_article = Article.find_by_slug(article.slug)
-        expect(found_article.slug).to eq(article.slug)
+        article = Article.find_by_slug('test-title')
+        expect(article).to be_a(Article)
+        expect(article.title).to eq('Test Title')
       end
     end
   end
@@ -71,9 +76,10 @@ RSpec.describe Article, type: :model do
   context 'when retrieving all articles' do
     describe '.all' do
       it 'returns all articles' do
-        query_result = instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash])
-        allow(cluster).to receive(:query).and_return(query_result)
-        expect(Article.all.map(&:slug)).to include(article.slug)
+        articles = Article.all
+        expect(articles).to be_an(Array)
+        expect(articles[0].first).to be_a(Article)
+        expect(articles[0].first.title).to eq('Test Title')
       end
     end
   end
