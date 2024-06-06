@@ -1,0 +1,92 @@
+<div class="article-page">
+  <div class="banner">
+    <div class="container">
+      <h1><%= @article.title %></h1>
+
+      <div class="article-meta">
+        <%= link_to show_users_path(@article.author.username) do %>
+          <%= image_tag asset_path(@article.author.image, fallback: "default_profile.png"), alt: @article.author.username %>
+        <% end %>
+        <div class="info">
+          <%= link_to @article.author.username, show_users_path(@article.author.username), class: 'author' %>
+          <span class="date"><%= @article.created_at.strftime('%B %d, %Y') %></span>
+        </div>
+        <%= button_to 'Follow', follow_profile_path(@article.author.username), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
+        &nbsp;&nbsp;
+        <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
+        <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
+      </div>
+    </div>
+  </div>
+
+  <div class="container page">
+    <div class="row article-content">
+      <div class="col-md-12">
+        <%= simple_format @article.body %>
+        <ul class="tag-list">
+          <% @article.tags.each do |tag| %>
+            <li class="tag-default tag-pill tag-outline"><%= tag %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <hr />
+
+    <div class="article-actions">
+      <div class="article-meta">
+        <%= link_to show_users_path(@article.author.username) do %>
+          <%= image_tag asset_path(@article.author.image, fallback: "default_profile.png"), alt: @article.author.username %>
+        <% end %>
+        <div class="info">
+          <%= link_to @article.author.username, show_users_path(@article.author.username), class: 'author' %>
+          <span class="date"><%= @article.created_at.strftime('%B %d, %Y') %></span>
+        </div>
+        <%= button_to 'Follow', follow_profile_path(@article.author.username), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
+        &nbsp;
+        <%= button_to 'Favorite Article', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
+        <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
+      </div>
+    </div>
+
+    <div class="row">
+        <% if @article %>
+            <%= form_with(model: [@article, @comment], local: true, url: article_comments_path(@article.id), method: :post, class: 'card comment-form') do |form| %>
+                <div class="card-block">
+                    <%= form.text_area :body, class: 'form-control', placeholder: 'Write a comment...', rows: 3 %>
+                </div>
+                <div class="card-footer">
+                    <img src="<%= current_user.image %>" class="comment-author-img" />
+                    <button class="btn btn-sm btn-primary">Post Comment</button>
+                </div>
+            <% end %>
+        <% else %>
+            <p>Article not found.</p>
+        <% end %>
+
+        <% @article.comments.each do |comment| %>
+          <div class="card">
+            <div class="card-block">
+              <p class="card-text"><%= comment.body %></p>
+            </div>
+            <div class="card-footer">
+              <%= link_to show_users_path(comment.author.username), class: 'comment-author' do %>
+                <%= image_tag comment.author.image, class: 'comment-author-img' %>
+              <% end %>
+              &nbsp;
+              <%= link_to comment.author.username, show_users_path(comment.author.username), class: 'comment-author' %>
+              <span class="date-posted"><%= comment.created_at.strftime('%B %d, %Y') %></span>
+              <% if current_user == comment.author %>
+                <span class="mod-options">
+                  <%= button_to '', article_comments_path(@article.id, comment), method: :delete, class: 'ion-trash-a' %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

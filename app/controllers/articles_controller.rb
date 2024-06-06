@@ -9,8 +9,20 @@ class ArticlesController < ApplicationController
   end
 
   def show
-    article = Article.find_by_slug(params[:id])
-    render json: { article: article.to_hash }
+    @article = Article.find_by_slug(params[:id])
+    if @article
+      @comment = Comment.new
+
+      respond_to do |format|
+        format.html { render :show }
+        format.json { render json: { article: @article.to_hash } }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'Article not found' }
+        format.json { render json: { errors: ['Article not found'] }, status: :not_found }
+      end
+    end
   end
 
   def new

@@ -80,9 +80,20 @@ class Article
 
   def comments
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = $1"
-    result = cluster.query(query, [id])
-    result.rows.map { |row| Comment.new(row) }
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([id])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", options)
+    comments = []
+    if result.rows.any?
+      comments = result.rows.map do |row|
+        comment_data = row['_default']
+        next if comment_data.nil?
+
+        comment_data['id'] = row['id']
+        Comment.new(comment_data)
+      end
+    end
+    comments.compact
   end
 
   def add_comment(comment)

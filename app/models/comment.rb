@@ -41,6 +41,10 @@ class Comment
     end
   end
 
+  def author
+    User.find(author_id)
+  end
+
   def validate!
     raise ActiveModel::ValidationError, self if invalid?
   end

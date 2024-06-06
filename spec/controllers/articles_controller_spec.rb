@@ -3,7 +3,7 @@ require 'couchbase'
 require 'jwt'
 
 RSpec.describe ArticlesController, type: :controller do
-  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'test_image.png') }
+  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'default_profile.png') }
   let(:article_data) do
     {
       '_default' => {
@@ -21,6 +21,21 @@ RSpec.describe ArticlesController, type: :controller do
     }
   end
   let(:article) { Article.new(article_data['_default'].merge('id' => article_data['id'])) }
+  let(:comment_data) do
+    {
+      '_default' => {
+        'id' => 'comment-id',
+        'body' => 'Test Comment',
+        'article_id' => article.id,
+        'author_id' => current_user.id,
+        'created_at' => Time.now,
+        'updated_at' => Time.now,
+        'type' => 'comment'
+      },
+      'id' => 'comment-id'
+    }
+  end
+  let(:comment) { Comment.new(comment_data['_default'].merge('id' => comment_data['id'])) }
   let(:tag_data) do
     [
       {
@@ -39,7 +54,6 @@ RSpec.describe ArticlesController, type: :controller do
       }
     ]
   end
-
   let(:tags) { tag_data.map { |data| Tag.new(data['_default'].merge('id' => data['id'])) } }
   let(:updated_attributes) { { title: 'Updated Title' } }
   let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
@@ -48,6 +62,7 @@ RSpec.describe ArticlesController, type: :controller do
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:query_result_article) { instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)]) }
   let(:query_result_articles) { instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)]) }
+  let(:query_result_comments) { instance_double(Couchbase::Cluster::QueryResult, rows: [comment.to_hash.merge('_default' => comment.to_hash)]) }
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
   let(:errors) { double('errors', any?: true, full_messages: ['Error message']) }
   let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: []) }
@@ -65,11 +80,13 @@ RSpec.describe ArticlesController, type: :controller do
     allow(controller).to receive(:authenticate_user).and_return(true)
     allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", an_instance_of(Couchbase::Options::Query)).and_return(query_result_article)
     allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", an_instance_of(Couchbase::Options::Query)).and_return(query_result_articles)
+    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", an_instance_of(Couchbase::Options::Query)).and_return(query_result_comments)
     allow(collection).to receive(:upsert)
     allow(collection).to receive(:remove)
     allow(collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
     allow(collection).to receive(:mutate_in).with(current_user.id, anything).and_return(mutate_in)
     request.headers['Authorization'] = "Bearer #{token}"
+    stub_image_tag
   end
 
   describe 'GET #index' do
@@ -93,7 +110,7 @@ RSpec.describe ArticlesController, type: :controller do
       get :show, params: { id: 'test-title' }
 
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)['article']['title']).to eq('Test Title')
+      expect(response.body).to include('Test Title')
     end
   end
 
