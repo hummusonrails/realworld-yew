@@ -32,9 +32,13 @@ class Comment
 
   def self.find(id)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1"
-    result = cluster.query(query, [id])
-    Comment.new(result.rows.first) if result.rows.any?
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([id])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = ? LIMIT 1", options)
+    if result.rows.any?
+      row = result.rows.first
+      Comment.new(row["_default"].merge('id' => row['id']))
+    end
   end
 
   def validate!

@@ -3,16 +3,18 @@ require 'couchbase'
 require 'jwt'
 
 RSpec.describe CommentsController, type: :controller do
-  let(:user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password')) }
-  let(:article) { Article.new(id: 'test-title', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: user.id) }
-  let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: user.id, article_id: article.id, type: 'comment') }
-  let(:token) { JWT.encode({ user_id: user.id }, Rails.application.secret_key_base) }
+  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password')) }
+  let(:article) { Article.new(id: 'article-id', slug: 'test-title', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: current_user.id) }
+  let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: current_user.id, article_id: article.id, type: 'comment') }
+  let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
 
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
-  let(:query_result_user) { instance_double(Couchbase::Cluster::QueryResult, rows: [user.to_hash]) }
-  let(:query_result_comment) { instance_double(Couchbase::Cluster::QueryResult, rows: [comment.to_hash]) }
+  let(:query_result_user) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => user.to_hash, 'id' => user.id }]) }
+  let(:query_result_comment) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => comment.to_hash, 'id' => comment.id }]) }
+  let(:user_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [user.id]) }
+  let(:comment_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [comment.id]) }
   let(:get_result) { instance_double(Couchbase::GetResult, content: user.to_hash) }
 
   before do
@@ -22,11 +24,9 @@ RSpec.describe CommentsController, type: :controller do
 
     allow(collection).to receive(:upsert)
 
-    allow(JWT).to receive(:decode).and_return([{ 'user_id' => user.id }])
+    allow(User).to receive(:find).and_return(current_user)
+    allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
     request.headers['Authorization'] = "Bearer #{token}"
-
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'user' AND `id` = $1 LIMIT 1", anything).and_return(query_result_user)
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = $1 LIMIT 1", anything).and_return(query_result_comment)
   end
 
   describe 'GET #index' do
@@ -48,7 +48,7 @@ RSpec.describe CommentsController, type: :controller do
         allow(article).to receive(:add_comment).with(instance_of(Comment)).and_return(true)
         allow_any_instance_of(Comment).to receive(:save).and_return(true)
 
-        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }
+        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }, as: :json
 
         expect(response).to have_http_status(:created)
         expect(JSON.parse(response.body)['comment']['body']).to eq('Test Comment')
@@ -60,7 +60,7 @@ RSpec.describe CommentsController, type: :controller do
         allow_any_instance_of(Comment).to receive(:save).and_return(false)
         allow_any_instance_of(Comment).to receive_message_chain(:errors, :full_messages).and_return(['Error message'])
 
-        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }
+        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }, as: :json
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors']).to include('Error message')
@@ -71,7 +71,7 @@ RSpec.describe CommentsController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }
+        post :create, params: { article_id: 'test-title', comment: { body: 'Test Comment' } }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -86,7 +86,7 @@ RSpec.describe CommentsController, type: :controller do
         allow(Comment).to receive(:find).with('comment-id').and_return(comment)
         allow(collection).to receive(:remove).with('comment-id').and_return(true)
 
-        delete :destroy, params: { article_id: 'article-id', id: 'comment-id' }
+        delete :destroy, params: { article_id: 'test-title', id: 'comment-id' }
 
         expect(response).to have_http_status(:no_content)
       end
@@ -96,7 +96,7 @@ RSpec.describe CommentsController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        delete :destroy, params: { article_id: 'article-id', id: 'comment-id' }
+        delete :destroy, params: { article_id: 'test-title', id: 'comment-id' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
