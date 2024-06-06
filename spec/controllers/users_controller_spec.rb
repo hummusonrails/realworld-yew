@@ -120,8 +120,8 @@ RSpec.describe UsersController, type: :controller do
 
         put :update, params: { user: updated_attributes }
 
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['user']['username']).to eq('updateduser')
+        expect(response).to have_http_status(:found)
+        expect(response.body).to redirect_to(profile_path(current_user.username))
       end
     end
 
@@ -132,8 +132,8 @@ RSpec.describe UsersController, type: :controller do
 
         put :update, params: { user: { username: 'updateduser', bio: 'Updated bio' } }
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors']).to include('User not authenticated')
+        expect(response).to have_http_status(:found)
+        expect(flash[:alert]).to eq('Unable to save')
       end
     end
   end

@@ -12,7 +12,7 @@
           </ul>
         <% end %>
 
-        <%= form_with(model: @user, url: update_users_path, local: true) do |f| %>
+        <%= form_with(model: @user, url: update_users_path, local: true, method: :put) do |f| %>
           <fieldset>
             <fieldset class="form-group">
               <%= f.text_field :image, class: 'form-control', placeholder: 'URL of profile picture' %>

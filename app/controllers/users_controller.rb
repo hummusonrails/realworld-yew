@@ -80,9 +80,15 @@ class UsersController < ApplicationController
 
   def update
     if current_user && current_user.update(user_params)
-      render json: { user: current_user.to_hash }
+      respond_to do |format|
+        format.html { redirect_to profile_path(current_user.username), notice: 'User updated successfully.' }
+        format.json { render json: { user: current_user.to_hash } }
+      end
     else
-      render json: { errors: ['User not authenticated'] }, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { redirect_to settings_users_path, alert: 'Unable to save' }
+        format.json { render json: { errors: ['Unable to save'] }, status: :unprocessable_entity }
+      end
     end
   end
 
