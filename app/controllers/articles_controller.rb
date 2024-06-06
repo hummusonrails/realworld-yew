@@ -2,8 +2,10 @@ class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    articles = Article.all || []
-    tags = Tag.all || []
+    @articles = Article.all || []
+    @tags = Tag.all || []
+
+    render :index
   end
 
   def show

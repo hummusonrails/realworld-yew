@@ -143,12 +143,15 @@ class User
 
   def find_article_by_slug(slug)
     cluster = Rails.application.config.couchbase_cluster
-    options = Cluster::QueryOptions.new
-    options.positional_parameters(["param1", "param2"])
-    # query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = $1 AND `author_id` = $2 LIMIT 1"
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([slug, id])
     result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", options)
-    Article.new(result.rows.first) if result.rows.any?
+    if result.rows.any?
+      row = result.rows.first
+      Article.new(row["_default"].merge('id' => row['id']))
+    end
   end
+
 
 
   def feed

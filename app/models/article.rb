@@ -1,6 +1,6 @@
 class Article
   include ActiveModel::Model
-  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type
+  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type, :favorites
 
   validates :title, presence: true
   validates :body, presence: true
@@ -38,7 +38,8 @@ class Article
       'created_at' => created_at,
       'updated_at' => updated_at,
       'author_id' => author_id,
-      'type' => 'article'
+      'type' => 'article',
+      'favorites' => favorites || []
     }
   end
 
@@ -71,10 +72,11 @@ class Article
   end
 
   def tags
-    tag_list.split(',').map(&:strip)
+    tag_list ? tag_list.split(',').map(&:strip) : []
   end
 
   def add_tag(tag)
+    self.tag_list = '' if tag_list.nil?
     tag_list << tag unless tag_list.include?(tag)
     save
   end
@@ -84,9 +86,21 @@ class Article
     save
   end
 
+  def favorites_count
+    if favorites
+      favorites.length
+    else
+      0
+    end
+  end
+
   def generate_slug(title)
     return nil if title.nil?
     @slug ||= title.parameterize(separator: '-')
+  end
+
+  def author
+    User.find(author_id)
   end
 
   def validate!

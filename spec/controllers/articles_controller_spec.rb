@@ -13,6 +13,8 @@ RSpec.describe ArticlesController, type: :controller do
         'description' => 'Test Description',
         'body' => 'Test Body',
         'author_id' => current_user.id,
+        'created_at' => Time.now,
+        'updated_at' => Time.now,
         'type' => 'article'
       },
       'id' => 'article-id'
@@ -44,7 +46,7 @@ RSpec.describe ArticlesController, type: :controller do
   let(:cluster) { instance_double(Couchbase::Cluster) }
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
-  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash]) }
+  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [article_data]) }
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
 
   before do
@@ -59,15 +61,18 @@ RSpec.describe ArticlesController, type: :controller do
   end
 
   describe 'GET #index' do
-  it 'returns all articles' do
-    allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-    allow(cluster).to receive(:query).and_return(query_result)
+    it 'returns all articles' do
+      allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
+      allow(cluster).to receive(:query).and_return(query_result)
+      allow(User).to receive(:find).with('user-id').and_return(current_user)
 
-    get :index
-    expect(response).to have_http_status(:ok)
-    expect(response.body).to include('Test Title')
+      get :index
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Test Title')
     end
   end
+
 
   describe 'GET #show' do
     it 'returns the requested article' do
@@ -86,7 +91,7 @@ RSpec.describe ArticlesController, type: :controller do
         allow(Article).to receive(:new).and_return(article)
         allow(article).to receive(:save).and_return(true)
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }
+        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }, as: :json
 
         expect(response).to have_http_status(:created)
         expect(JSON.parse(response.body)['article']['title']).to eq('Test Title')
@@ -97,7 +102,7 @@ RSpec.describe ArticlesController, type: :controller do
         allow(article).to receive(:save).and_return(false)
         allow(article).to receive_message_chain(:errors, :full_messages).and_return(['Error message'])
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }
+        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }, as: :json
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors']).to include('Error message')
@@ -108,7 +113,7 @@ RSpec.describe ArticlesController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }
+        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -117,51 +122,51 @@ RSpec.describe ArticlesController, type: :controller do
   end
 
   describe 'PUT #update' do
-  context 'when authenticated' do
-    it 'updates the article' do
-      allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-      allow(collection).to receive(:upsert).and_return(true)
+    context 'when authenticated' do
+      it 'updates the article' do
+        allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
+        allow(collection).to receive(:upsert).and_return(true)
 
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
+        allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
 
-      allow(article).to receive(:update).and_call_original
+        allow(article).to receive(:update).and_call_original
 
-      allow(Article).to receive(:find_by_slug).and_return(article)
+        allow(Article).to receive(:find_by_slug).and_return(article)
 
-      put :update, params: { id: 'test-title', article: updated_attributes }
+        put :update, params: { id: 'test-title', article: updated_attributes }, as: :json
 
-      expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)['article']['title']).to eq('Updated Title')
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['article']['title']).to eq('Updated Title')
+      end
+
+      it 'returns an error if the article cannot be updated' do
+        allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
+        allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
+
+        allow(collection).to receive(:upsert).and_return(false)
+
+        allow(article).to receive(:update).and_return(false)
+        allow(article).to receive_message_chain(:errors, :full_messages).and_return(['Error message'])
+
+        allow(Article).to receive(:find_by_slug).and_return(article)
+
+        put :update, params: { id: 'test-title', article: { title: 'Not working'} }, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
     end
 
-    it 'returns an error if the article cannot be updated' do
-      allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result)
+    context 'when not authenticated' do
+      it 'returns an error' do
+        request.headers['Authorization'] = nil
 
-      allow(collection).to receive(:upsert).and_return(false)
+        put :update, params: { id: 'test-title', article: updated_attributes }, as: :json
 
-      allow(article).to receive(:update).and_return(false)
-      allow(article).to receive_message_chain(:errors, :full_messages).and_return(['Error message'])
-
-      allow(Article).to receive(:find_by_slug).and_return(article)
-
-      put :update, params: { id: 'test-title', article: { title: 'Not working'} }
-
-      expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unauthorized)
+        expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
+      end
     end
   end
-
-  context 'when not authenticated' do
-    it 'returns an error' do
-      request.headers['Authorization'] = nil
-
-      put :update, params: { id: 'test-title', article: updated_attributes }
-
-      expect(response).to have_http_status(:unauthorized)
-      expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
-    end
-  end
-end
 
   describe 'DELETE #destroy' do
     context 'when authenticated' do
@@ -169,7 +174,7 @@ end
         allow(current_user).to receive_message_chain(:articles, :find_by_slug).and_return(article)
         allow(article).to receive(:destroy).and_return(true)
 
-        delete :destroy, params: { id: 'test-title' }
+        delete :destroy, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:no_content)
       end
@@ -179,7 +184,7 @@ end
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        delete :destroy, params: { id: 'test-title' }
+        delete :destroy, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -193,7 +198,7 @@ end
         allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
         allow(current_user).to receive(:feed).and_return([article])
 
-        get :feed
+        get :feed, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['articles'].first['title']).to eq('Test Title')
@@ -204,7 +209,7 @@ end
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        get :feed
+        get :feed, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -218,7 +223,7 @@ end
         allow(Article).to receive(:find_by_slug).with('test-title').and_return(article)
         allow(current_user).to receive(:favorite).with(article).and_return(true)
 
-        post :favorite, params: { id: 'test-title' }
+        post :favorite, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['article']['title']).to eq('Test Title')
@@ -229,7 +234,7 @@ end
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        post :favorite, params: { id: 'test-title' }
+        post :favorite, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -243,7 +248,7 @@ end
         allow(Article).to receive(:find_by_slug).with('test-title').and_return(article)
         allow(current_user).to receive(:unfavorite).with(article).and_return(true)
 
-        delete :unfavorite, params: { id: 'test-title' }
+        delete :unfavorite, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['article']['title']).to eq('Test Title')
@@ -254,7 +259,7 @@ end
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        delete :unfavorite, params: { id: 'test-title' }
+        delete :unfavorite, params: { id: 'test-title' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
