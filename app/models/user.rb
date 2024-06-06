@@ -1,12 +1,15 @@
 class User
   include ActiveModel::Model
-  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type
+  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type, :password, :following
 
   validates :username, presence: true
   validates :email, presence: true
   validates :password_digest, presence: true
+  validates :password, presence: true, on: :create
+
 
   def save
+    self.password_digest = BCrypt::Password.create(password) if password.present?
     validate!
     bucket = Rails.application.config.couchbase_bucket
     self.id ||= SecureRandom.uuid
@@ -27,29 +30,45 @@ class User
       'email' => email,
       'password_digest' => password_digest,
       'bio' => bio,
-      'image' => image
+      'image' => image,
+      'following' => following || [],
     }
   end
 
   def self.find(id)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'user' AND `id` = $1 LIMIT 1"
-    result = cluster.query(query, [id])
-    User.new(result.rows.first) if result.rows.any?
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([id])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE META().id = ? LIMIT 1", options)
+    if result.rows.any?
+      row = result.rows.first
+      User.new(row["_default"].merge('id' => row['id']))
+    end
   end
+
 
   def self.find_by_email(email)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `email` = $1 LIMIT 1"
-    result = cluster.query(query, [email])
-    User.new(result.rows.first) if result.rows.any?
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([email])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `email` = ? LIMIT 1", options)
+    if result.rows.any?
+      row = result.rows.first
+      User.new(row["_default"].merge('id' => row['id']))
+    end
   end
+
 
   def self.find_by_username(username)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `username` = $1 LIMIT 1"
-    result = cluster.query(query, [username])
-    User.new(result.rows.first) if result.rows.any?
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([username])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `username` = ? LIMIT 1", options)
+    puts result
+    if result.rows.any?
+      row = result.rows.first
+      User.new(row["_default"].merge('id' => row['id']))
+    end
   end
 
   def follow(user)
@@ -74,7 +93,16 @@ class User
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('following')
     ])
-    result.content(0).include?(user.id)
+    following = result.content(0) rescue []
+    following.include?(user.id)
+  end
+
+  def favorited_articles(user)
+    cluster = Rails.application.config.couchbase_cluster
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([id])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND ANY v IN `favorites` SATISFIES v = ? END", options)
+    result.rows.map { |row| Article.new(row) }
   end
 
   def favorite(article)
@@ -99,25 +127,31 @@ class User
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('favorites')
     ])
-    result.content(0).include?(article.id)
+    favorites = []
+    favorites << result.content(0) rescue []
+
+    favorites.include?(article.id)
   end
 
   def articles
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = $1"
-    result = cluster.query(query, [id])
-    result.rows.map { |row| Article.new(row) }
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([id])
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?"
+    result = cluster.query(query, options)
+    result.rows.map { |row| Article.new(row["_default"]) }
   end
 
   def find_article_by_slug(slug)
     cluster = Rails.application.config.couchbase_cluster
-    options = Cluster::QueryOptions.new
-    options.positional_parameters(["param1", "param2"])
-    # query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = $1 AND `author_id` = $2 LIMIT 1"
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([slug, id])
     result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", options)
-    Article.new(result.rows.first) if result.rows.any?
+    if result.rows.any?
+      row = result.rows.first
+      Article.new(row["_default"].merge('id' => row['id']))
+    end
   end
-
 
   def feed
     cluster = Rails.application.config.couchbase_cluster

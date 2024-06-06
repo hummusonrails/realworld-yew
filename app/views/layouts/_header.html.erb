@@ -1,0 +1,31 @@
+<nav class="navbar navbar-light">
+  <div class="container">
+    <%= link_to 'conduit', root_path, class: 'navbar-brand' %>
+    <ul class="nav navbar-nav pull-xs-right">
+      <li class="nav-item">
+        <%= link_to 'Home', root_path, class: "nav-link #{'active' if current_page?(root_path)}" %>
+      </li>
+      <% if logged_in? %>
+        <li class="nav-item">
+          <%= link_to 'New Article', new_article_path, class: "nav-link #{'active' if current_page?(new_article_path)}" %>
+        </li>
+        <li class="nav-item">
+          <%= link_to 'Settings', settings_users_path(current_user), class: "nav-link #{'active' if current_page?(update_users_path(current_user))}" %>
+        </li>
+        <li class="nav-item">
+          <%= link_to profile_path(current_user.username), class: "nav-link #{'active' if current_page?(profile_path(current_user.username))}" do %>
+            <img src="<%= current_user.image %>" class="user-pic" />
+            <%= current_user.username %>
+          <% end %>
+        </li>
+      <% else %>
+        <li class="nav-item">
+          <%= link_to 'Sign in', login_users_path, class: "nav-link #{'active' if current_page?(login_users_path)}" %>
+        </li>
+        <li class="nav-item">
+          <%= link_to 'Sign up', new_user_path, class: "nav-link #{'active' if current_page?(new_user_path)}" %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</nav>

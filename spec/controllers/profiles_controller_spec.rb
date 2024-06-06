@@ -21,7 +21,7 @@ RSpec.describe ProfilesController, type: :controller do
         get :show, params: { username: 'otheruser' }
 
         expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['profile']['username']).to eq('otheruser')
+        expect(response.body).to include('otheruser')
       end
     end
 
@@ -31,7 +31,9 @@ RSpec.describe ProfilesController, type: :controller do
 
         get :show, params: { username: 'unknownuser' }
 
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq('User not found')
       end
     end
   end
@@ -41,7 +43,7 @@ RSpec.describe ProfilesController, type: :controller do
       it 'follows the user and returns the profile' do
         allow(current_user).to receive(:follow).with(other_user).and_return(true)
 
-        post :follow, params: { username: 'otheruser' }
+        post :follow, params: { username: 'otheruser' }, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['profile']['username']).to eq('otheruser')
@@ -53,7 +55,7 @@ RSpec.describe ProfilesController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        post :follow, params: { username: 'otheruser' }
+        post :follow, params: { username: 'otheruser' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')
@@ -66,7 +68,7 @@ RSpec.describe ProfilesController, type: :controller do
       it 'unfollows the user and returns the profile' do
         allow(current_user).to receive(:unfollow).with(other_user).and_return(true)
 
-        delete :unfollow, params: { username: 'otheruser' }
+        delete :unfollow, params: { username: 'otheruser' }, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['profile']['username']).to eq('otheruser')
@@ -78,7 +80,7 @@ RSpec.describe ProfilesController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        delete :unfollow, params: { username: 'otheruser' }
+        delete :unfollow, params: { username: 'otheruser' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['errors']).to include('Not Authenticated')

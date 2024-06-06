@@ -30,16 +30,4 @@ class CommentsController < ApplicationController
   def comment_params
     params.require(:comment).permit(:body, :article_id, :id)
   end
-
-  def authenticate_user
-    token = request.headers['Authorization'].split(' ').last
-    decoded = JWT.decode(token, Rails.application.secret_key_base).first
-    @current_user = User.find(decoded['user_id'])
-  rescue
-    render json: { errors: ['Not Authenticated'] }, status: :unauthorized
-  end
-
-  def current_user
-    @current_user
-  end
 end

@@ -41,7 +41,7 @@ RSpec.describe User, type: :model do
     context 'when a user is found with the given email'
       it 'returns a User object when a user with the given email exists in the Couchbase bucket' do
         email = 'test@example.com'
-        query_result = instance_double(Couchbase::Cluster::QueryResult, rows: [{'id' => 'user-id', 'username' => 'testuser', 'email' => email, 'password_digest' => 'password'}])
+        query_result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "_default" => {'username' => 'testuser', 'email' => email, 'password_digest' => 'password'}, 'id' => 'user-id' }])
         allow(cluster).to receive(:query).and_return(query_result)
 
         user = User.find_by_email(email)

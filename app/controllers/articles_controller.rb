@@ -2,8 +2,10 @@ class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    articles = Article.all
-    render json: { articles: articles.map(&:to_hash), articlesCount: articles.count }
+    @articles = Article.all || []
+    @tags = Tag.all || []
+
+    render :index
   end
 
   def show
@@ -11,14 +13,18 @@ class ArticlesController < ApplicationController
     render json: { article: article.to_hash }
   end
 
+  def new
+    @article = Article.new
+  end
+
   def create
-    article = Article.new(article_params)
-    article.author_id = current_user.id
-    article.slug = article.generate_slug(article.title)
-    if article.save
-      render json: { article: article.to_hash }, status: :created
+    @article = Article.new(article_params)
+    @article.author_id = current_user.id
+    if @article.save
+      redirect_to article_path(@article.slug), notice: 'Article created successfully.'
     else
-      render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
+      flash.now[:alert] = "There were errors saving your article."
+      render :new
     end
   end
 
@@ -32,8 +38,13 @@ class ArticlesController < ApplicationController
   end
 
   def destroy
-    article = current_user.articles.find_by_slug(params[:id])
-    article.destroy
+    article = Article.find_by_slug(params[:id])
+    if article && article.author_id == current_user.id
+      article.destroy
+    else
+      render json: { errors: ['Article not found'] }, status: :not_found
+      return
+    end
     head :no_content
   end
 
@@ -57,18 +68,6 @@ class ArticlesController < ApplicationController
   private
 
   def article_params
-    params.require(:article).permit(:title, :description, :body, tagList: [])
-  end
-
-  def authenticate_user
-    token = request.headers['Authorization'].split(' ').last
-    decoded = JWT.decode(token, Rails.application.secret_key_base).first
-    @current_user = User.find(decoded['user_id'])
-  rescue
-    render json: { errors: ['Not Authenticated'] }, status: :unauthorized
-  end
-
-  def current_user
-    @current_user
+    params.require(:article).permit(:title, :description, :body, tag_list: [])
   end
 end

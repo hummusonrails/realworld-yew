@@ -4,11 +4,40 @@ class ProfilesController < ApplicationController
   def show
     user = User.find_by_username(params[:username])
     if user.nil?
-      render json: { errors: ['User not found'] }, status: :not_found
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'User not found' }
+        format.json { render json: { errors: ['User not found'] }, status: :not_found }
+      end
       return
     end
-    profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
-    render json: { profile: profile.to_hash }
+
+    @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
+    @articles = user.articles
+    @current_user = current_user
+
+    respond_to do |format|
+      format.html
+      format.json { render json: { profile: @profile.to_hash } }
+    end
+  end
+
+  def favorited
+    user = User.find_by_username(params[:username])
+    if user.nil?
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'User not found' }
+        format.json { render json: { errors: ['User not found'] }, status: :not_found }
+      end
+      return
+    end
+
+    @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
+    @articles = user.favorited_articles
+
+    respond_to do |format|
+      format.html
+      format.json { render json: { profile: @profile.to_hash, articles: @articles.map(&:to_hash) } }
+    end
   end
 
   def follow
@@ -31,19 +60,5 @@ class ProfilesController < ApplicationController
     current_user.unfollow(user)
     profile = Profile.new(user.to_hash.merge(following: false))
     render json: { profile: profile.to_hash }
-  end
-
-  private
-
-  def authenticate_user
-    token = request.headers['Authorization'].split(' ').last
-    decoded = JWT.decode(token, Rails.application.secret_key_base).first
-    @current_user = User.find(decoded['user_id'])
-  rescue
-    render json: { errors: ['Not Authenticated'] }, status: :unauthorized
-  end
-
-  def current_user
-    @current_user
   end
 end
