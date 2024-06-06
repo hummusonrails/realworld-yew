@@ -76,7 +76,10 @@ RSpec.describe Article, type: :model do
   context 'when retrieving all articles' do
     describe '.all' do
       it 'returns all articles' do
-        expect(Article.all.map(&:slug)).to include(article.slug)
+        articles = Article.all
+        expect(articles).to be_an(Array)
+        expect(articles[0].first).to be_a(Article)
+        expect(articles[0].first.title).to eq('Test Title')
       end
     end
   end

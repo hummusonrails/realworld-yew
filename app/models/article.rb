@@ -65,8 +65,13 @@ class Article
     result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'")
     articles = []
     if result.rows.any?
-      row = result.rows.first
-      articles << Article.new(row['_default'].merge('id' => row['id']))
+      articles << result.rows.map do |row|
+        article_data = row['_default']
+        next if article_data.nil?
+
+        article_data['id'] = row['id']
+        Article.new(article_data)
+      end
     end
     articles
   end
