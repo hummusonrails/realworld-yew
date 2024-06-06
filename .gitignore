@@ -54,3 +54,5 @@ Dockerfile
 /log
 !/log/.keep
 
+.DS_Store
+
