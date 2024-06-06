@@ -1,0 +1,40 @@
+<div class="editor-page">
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-10 offset-md-1 col-xs-12">
+        <%= form_with model: @article, url: articles_path, local: true do |f| %>
+          <% if @article.errors.any? %>
+            <ul class="error-messages">
+              <% @article.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          <% end %>
+
+          <fieldset>
+            <fieldset class="form-group">
+              <%= f.text_field :title, class: "form-control form-control-lg", placeholder: "Article Title" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.text_field :description, class: "form-control", placeholder: "What's this article about?" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.text_area :body, class: "form-control", rows: 8, placeholder: "Write your article (in markdown)" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.text_field :tag_list, class: "form-control", placeholder: "Enter tags" %>
+              <div class="tag-list">
+                <% @article.tags.each do |tag| %>
+                  <span class="tag-default tag-pill">
+                    <i class="ion-close-round"></i> <%= tag %>
+                  </span>
+                <% end %>
+              </div>
+            </fieldset>
+            <%= f.submit "Publish Article", class: "btn btn-lg pull-xs-right btn-primary" %>
+          </fieldset>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

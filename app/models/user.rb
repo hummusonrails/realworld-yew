@@ -127,7 +127,9 @@ class User
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('favorites')
     ])
-    favorites = result.content(0) rescue []
+    favorites = []
+    favorites << result.content(0) rescue []
+
     favorites.include?(article.id)
   end
 
@@ -135,10 +137,9 @@ class User
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
     options.positional_parameters([id])
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ? LIMIT 1", options)
-    if result.rows.any?
-      result.rows.map { |row| Article.new(row)}
-    end
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?"
+    result = cluster.query(query, options)
+    result.rows.map { |row| Article.new(row["_default"]) }
   end
 
   def find_article_by_slug(slug)
@@ -151,8 +152,6 @@ class User
       Article.new(row["_default"].merge('id' => row['id']))
     end
   end
-
-
 
   def feed
     cluster = Rails.application.config.couchbase_cluster
