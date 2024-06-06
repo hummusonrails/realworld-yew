@@ -6,6 +6,12 @@ class Article
   validates :body, presence: true
   validates :author_id, presence: true
 
+  def initialize(attributes = {})
+    super
+    self.created_at = Time.parse(created_at) if created_at.is_a?(String)
+    self.updated_at = Time.parse(updated_at) if updated_at.is_a?(String)
+  end
+
   def save
     validate!
     bucket = Rails.application.config.couchbase_bucket
@@ -45,16 +51,24 @@ class Article
 
   def self.find_by_slug(slug)
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = $1 LIMIT 1"
-    result = cluster.query(query, [slug])
-    Article.new(result.rows.first) if result.rows.any?
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([slug])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options)
+    if result.rows.any?
+      row = result.rows.first
+      Article.new(row['_default'].merge('id' => row['id']))
+    end
   end
 
   def self.all
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'"
-    result = cluster.query(query)
-    result.rows.map { |row| Article.new(row) }
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'")
+    articles = []
+    if result.rows.any?
+      row = result.rows.first
+      articles << Article.new(row['_default'].merge('id' => row['id']))
+    end
+    articles
   end
 
   def comments

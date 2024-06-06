@@ -20,6 +20,9 @@ class ArticlesController < ApplicationController
   def create
     @article = Article.new(article_params)
     @article.author_id = current_user.id
+    @article.slug = @article.generate_slug(@article.title)
+    @article.created_at ||= Time.now
+    @article.updated_at ||= Time.now
     if @article.save
       redirect_to article_path(@article.slug), notice: 'Article created successfully.'
     else
