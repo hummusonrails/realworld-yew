@@ -10,7 +10,7 @@
           <%= link_to 'New Article', new_article_path, class: "nav-link #{'active' if current_page?(new_article_path)}" %>
         </li>
         <li class="nav-item">
-          <%= link_to 'Settings', update_users_path(current_user), class: "nav-link #{'active' if current_page?(update_users_path(current_user))}" %>
+          <%= link_to 'Settings', settings_users_path(current_user), class: "nav-link #{'active' if current_page?(update_users_path(current_user))}" %>
         </li>
         <li class="nav-item">
           <%= link_to profile_path(current_user.username), class: "nav-link #{'active' if current_page?(profile_path(current_user.username))}" do %>

@@ -1,0 +1,40 @@
+<div class="settings-page">
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-6 offset-md-3 col-xs-12">
+        <h1 class="text-xs-center">Your Settings</h1>
+
+        <% if @user.errors.any? %>
+          <ul class="error-messages">
+            <% @user.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <%= form_with(model: @user, url: update_users_path, local: true) do |f| %>
+          <fieldset>
+            <fieldset class="form-group">
+              <%= f.text_field :image, class: 'form-control', placeholder: 'URL of profile picture' %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.text_field :username, class: 'form-control form-control-lg', placeholder: 'Your Name' %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.text_area :bio, class: 'form-control form-control-lg', rows: 8, placeholder: 'Short bio about you' %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.email_field :email, class: 'form-control form-control-lg', placeholder: 'Email' %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= f.password_field :password, class: 'form-control form-control-lg', placeholder: 'New Password' %>
+            </fieldset>
+            <button class="btn btn-lg btn-primary pull-xs-right">Update Settings</button>
+          </fieldset>
+        <% end %>
+        <hr />
+        <%= button_to 'Or click here to logout.', logout_users_path, method: :delete, class: 'btn btn-outline-danger' %>
+      </div>
+    </div>
+  </div>
+</div>

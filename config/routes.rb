@@ -5,6 +5,7 @@ Rails.application.routes.draw do
       get 'login', to: 'users#login_form'
       delete 'logout', to: 'users#logout'
       get 'profile', to: 'users#show', as: 'show'
+      get 'settings', to: 'users#edit'
       put 'profile', to: 'users#update', as: 'update'
     end
   end

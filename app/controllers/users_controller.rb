@@ -5,6 +5,10 @@ class UsersController < ApplicationController
     @user = User.new
   end
 
+  def edit
+    @user = current_user
+  end
+
   def create
     @user = User.new(user_params)
     if @user.save
@@ -58,6 +62,7 @@ class UsersController < ApplicationController
 
   def show
     if current_user
+      @current_user = current_user
       @profile = Profile.new(current_user.to_hash.merge(following: current_user&.following?(current_user)))
       @articles = current_user.articles
 

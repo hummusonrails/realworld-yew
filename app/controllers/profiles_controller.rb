@@ -13,6 +13,7 @@ class ProfilesController < ApplicationController
 
     @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
     @articles = user.articles
+    @current_user = current_user
 
     respond_to do |format|
       format.html
