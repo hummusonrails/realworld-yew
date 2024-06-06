@@ -62,10 +62,11 @@ class Article
 
   def self.all
     cluster = Rails.application.config.couchbase_cluster
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'")
+    query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'"
+    result = cluster.query(query)
     articles = []
     if result.rows.any?
-      articles << result.rows.map do |row|
+      articles = result.rows.map do |row|
         article_data = row['_default']
         next if article_data.nil?
 
@@ -73,8 +74,9 @@ class Article
         Article.new(article_data)
       end
     end
-    articles
+    articles.compact
   end
+
 
   def comments
     cluster = Rails.application.config.couchbase_cluster

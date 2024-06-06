@@ -28,7 +28,7 @@ class Tag
                next if tag_data.nil?
 
                tag_data["id"] = row["id"]
-               Tag.new(tag_data)
+               Tag.new(tag_data['_default'])
              end.compact
            else
              []
