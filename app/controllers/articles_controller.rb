@@ -2,7 +2,13 @@ class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    @articles = Article.all || []
+    articles = Article.all
+    @articles = articles.nil? ? [] : articles.map do |article|
+      {
+        article: article,
+        favorited: current_user ? current_user.favorited?(article) : false
+      }
+    end
     @tags = Tag.all || []
 
     render :index
@@ -89,7 +95,7 @@ class ArticlesController < ApplicationController
 
     if current_user.favorited?(article)
       respond_to do |format|
-        format.html { redirect_to article_path(article.slug), alert: 'Article already favorited.' }
+        format.html { redirect_to appropriate_path(article.slug), alert: 'Article already favorited.' }
         format.json { render json: { errors: ['Article already favorited'] }, status: :unprocessable_entity }
       end
       return
@@ -98,8 +104,9 @@ class ArticlesController < ApplicationController
     current_user.favorite(article)
 
     respond_to do |format|
-      format.html { redirect_to article_path(article.slug), notice: 'Article favorited successfully.' }
+      format.html { redirect_to appropriate_path(article.slug), notice: 'Article favorited successfully.' }
       format.json { render json: { article: article.to_hash } }
+      format.turbo_stream
     end
   end
 
@@ -116,7 +123,7 @@ class ArticlesController < ApplicationController
 
     unless current_user.favorited?(article)
       respond_to do |format|
-        format.html { redirect_to article_path(article.slug), alert: 'Article not favorited.' }
+        format.html { redirect_to appropriate_path(article.slug), alert: 'Article not favorited.' }
         format.json { render json: { errors: ['Article not favorited'] }, status: :unprocessable_entity }
       end
       return
@@ -125,14 +132,23 @@ class ArticlesController < ApplicationController
     current_user.unfavorite(article)
 
     respond_to do |format|
-      format.html { redirect_to article_path(article.slug), notice: 'Article unfavorited successfully.' }
+      format.html { redirect_to appropriate_path(article.slug), notice: 'Article unfavorited successfully.' }
       format.json { render json: { article: article.to_hash } }
+      format.turbo_stream
     end
   end
 
   private
 
   def article_params
-    params.require(:article).permit(:title, :description, :body, :tag_list)
+    params.require(:article).permit(:title, :description, :body, :tag_list, :favorites_count)
+  end
+
+  def appropriate_path(article)
+    if request.referer && URI(request.referer).path == root_path
+      root_path
+    else
+      article_path(article)
+    end
   end
 end

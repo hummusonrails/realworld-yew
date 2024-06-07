@@ -122,6 +122,9 @@ class User
     collection.mutate_in(id, [
       Couchbase::MutateInSpec.array_add_unique('favorites', article.id)
     ])
+    collection.mutate_in(article.id, [
+      Couchbase::MutateInSpec.increment('favorites_count', 1)
+    ])
   end
 
   def unfavorite(article)
@@ -129,12 +132,20 @@ class User
     collection = bucket.default_collection
 
     exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
-    unless exists_result.exists?(0)
-      return
-    end
+    return unless exists_result.exists?(0)
+
+    result = collection.lookup_in(id, [Couchbase::LookupInSpec.get('favorites')])
+    favorites = result.content(0)
+
+    return unless favorites.include?(article.id)
+
+    favorites.delete(article.id)
 
     collection.mutate_in(id, [
-      Couchbase::MutateInSpec.array_remove('favorites', article.id)
+      Couchbase::MutateInSpec.replace('favorites', favorites)
+    ])
+    collection.mutate_in(article.id, [
+      Couchbase::MutateInSpec.decrement('favorites_count', 1)
     ])
   end
 
@@ -150,8 +161,8 @@ class User
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('favorites')
     ])
-    favorites = result.content(0)
 
+    favorites = result.content(0) rescue []
     favorites.include?(article.id)
   end
 

@@ -1,0 +1,32 @@
+<div class="editor-page">
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-10 offset-md-1 col-xs-12">
+        <h1>Edit Article</h1>
+
+        <%= form_with(model: @article, local: true, method: :patch, url: article_path(@article.slug)) do |form| %>
+          <fieldset>
+            <fieldset class="form-group">
+              <%= form.text_field :title, class: "form-control form-control-lg", placeholder: "Article Title" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= form.text_field :description, class: "form-control", placeholder: "What's this article about?" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= form.text_area :body, class: "form-control", rows: 8, placeholder: "Write your article (in markdown)" %>
+            </fieldset>
+            <fieldset class="form-group">
+              <%= form.text_field :tag_list, class: "form-control", placeholder: "Enter tags" %>
+              <div class="tag-list">
+                <% @article.tags.each do |tag| %>
+                  <span class="tag-default tag-pill"><%= tag %></span>
+                <% end %>
+              </div>
+            </fieldset>
+            <%= form.submit "Update Article", class: "btn btn-lg pull-xs-right btn-primary" %>
+          </fieldset>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

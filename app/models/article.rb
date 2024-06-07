@@ -1,6 +1,6 @@
 class Article
   include ActiveModel::Model
-  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type, :favorites
+  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type, :favorites, :favorites_count
 
   validates :title, presence: true
   validates :body, presence: true
@@ -19,6 +19,8 @@ class Article
     self.slug ||= generate_slug(title)
     self.created_at ||= Time.now
     self.updated_at ||= Time.now
+    self.favorites ||= []
+    self.favorites_count ||= 0
     bucket.default_collection.upsert(id, to_hash)
   end
 
@@ -45,7 +47,7 @@ class Article
       'updated_at' => updated_at,
       'author_id' => author_id,
       'type' => 'article',
-      'favorites' => favorites || []
+      'favorites_count' => favorites_count
     }
   end
 
@@ -116,14 +118,6 @@ class Article
   def remove_tag(tag)
     tag_list.delete(tag)
     save
-  end
-
-  def favorites_count
-    if favorites
-      favorites.length
-    else
-      0
-    end
   end
 
   def generate_slug(title)

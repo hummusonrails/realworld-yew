@@ -15,7 +15,8 @@ RSpec.describe ArticlesController, type: :controller do
         'author_id' => current_user.id,
         'created_at' => Time.now,
         'updated_at' => Time.now,
-        'type' => 'article'
+        'type' => 'article',
+        'favorites_count' => 0,
       },
       'id' => 'article-id'
     }
