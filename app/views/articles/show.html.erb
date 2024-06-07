@@ -17,9 +17,11 @@
           <%= button_to 'Unfavorite Post', unfavorite_article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-primary' %>
         <% else %>
           <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <% end %>
+        <% if current_user && current_user.id == @article.author_id %>
+          <%= link_to 'Edit Article', edit_article_path(@article.slug), class: 'btn btn-sm btn-outline-secondary' %>
+          <%= button_to 'Delete Article', article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
         <% end %>        
-        <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
-        <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
       </div>
     </div>
   </div>
@@ -54,8 +56,10 @@
         <% else %>
           <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
         <% end %>
-        <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
-        <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
+        <% if current_user && current_user.id == @article.author_id %>
+          <%= link_to 'Edit Article', edit_article_path(@article.slug), class: 'btn btn-sm btn-outline-secondary' %>
+          <%= button_to 'Delete Article', article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
+        <% end %>   
       </div>
     </div>
 

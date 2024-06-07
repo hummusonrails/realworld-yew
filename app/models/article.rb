@@ -77,7 +77,6 @@ class Article
     articles.compact
   end
 
-
   def comments
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
