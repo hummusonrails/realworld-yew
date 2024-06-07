@@ -23,7 +23,7 @@
   <div class="container page">
     <div class="row article-content">
       <div class="col-md-12">
-        <%= simple_format @article.body %>
+        <%= markdown @article.body %>
         <ul class="tag-list">
           <% @article.tags.each do |tag| %>
             <li class="tag-default tag-pill tag-outline"><%= tag %></li>

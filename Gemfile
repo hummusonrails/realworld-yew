@@ -47,6 +47,9 @@ gem 'bcrypt', '~> 3.1.13'
 # Use JWT for authentication
 gem 'jwt', '~> 2.8'
 
+# Use Redcarpet for Markdown rendering
+gem 'redcarpet', '~> 3.6'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]
