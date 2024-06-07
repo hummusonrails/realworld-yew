@@ -3,7 +3,7 @@ require 'couchbase'
 
 RSpec.describe Article, type: :model do
   let(:author) { User.new(id: 'author-id', username: 'author', email: 'author@example.com') }
-  let(:article) { Article.new(id: 'article-id', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: author.id) }
+  let(:article) { Article.new(id: 'article-id', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: author.id, favorites: [], favorites_count: 0) }
   let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: 'author-id', article_id: article.id) }
 
   let(:bucket) { instance_double(Couchbase::Bucket) }
@@ -56,7 +56,7 @@ RSpec.describe Article, type: :model do
           'created_at' => article.created_at,
           'updated_at' => article.updated_at,
           'author_id' => article.author_id,
-          'favorites' => []
+          'favorites_count' => 0,
         }
         expect(article.to_hash).to eq(expected_hash)
       end
