@@ -1,6 +1,6 @@
 class User
   include ActiveModel::Model
-  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type, :password, :following
+  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type, :password, :following, :favorites
 
   validates :username, presence: true
   validates :email, presence: true
@@ -32,6 +32,7 @@ class User
       'bio' => bio,
       'image' => image,
       'following' => following || [],
+      'favorites' => favorites || []
     }
   end
 
@@ -98,16 +99,26 @@ class User
   end
 
   def favorited_articles(user)
-    cluster = Rails.application.config.couchbase_cluster
-    options = Couchbase::Options::Query.new
-    options.positional_parameters([id])
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND ANY v IN `favorites` SATISFIES v = ? END", options)
-    result.rows.map { |row| Article.new(row) }
+    bucket = Rails.application.config.couchbase_bucket
+    collection = bucket.default_collection
+    result = collection.lookup_in(id, [
+      Couchbase::LookupInSpec.get('favorites')
+    ])
+    favorite_ids = result.content(0) rescue []
+    find_by_ids(favorite_ids)
   end
 
   def favorite(article)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
+    unless exists_result.exists?(0)
+      collection.mutate_in(id, [
+        Couchbase::MutateInSpec.insert('favorites', [])
+      ])
+    end
+
     collection.mutate_in(id, [
       Couchbase::MutateInSpec.array_add_unique('favorites', article.id)
     ])
@@ -116,6 +127,12 @@ class User
   def unfavorite(article)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
+    unless exists_result.exists?(0)
+      return
+    end
+
     collection.mutate_in(id, [
       Couchbase::MutateInSpec.array_remove('favorites', article.id)
     ])
@@ -124,11 +141,16 @@ class User
   def favorited?(article)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
+    unless exists_result.exists?(0)
+      return false
+    end
+
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('favorites')
     ])
-    favorites = []
-    favorites << result.content(0) rescue []
+    favorites = result.content(0)
 
     favorites.include?(article.id)
   end
@@ -140,6 +162,16 @@ class User
     query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?"
     result = cluster.query(query, options)
     result.rows.map { |row| Article.new(row["_default"]) }
+  end
+
+  def find_by_ids(ids)
+    return [] if ids.empty?
+
+    cluster = Rails.application.config.couchbase_cluster
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([ids])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE META().id IN $1", options)
+    result.rows.map { |row| Article.new(row['_default'].merge('id' => row['id'])) }
   end
 
   def find_article_by_slug(slug)

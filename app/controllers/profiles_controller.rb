@@ -32,10 +32,10 @@ class ProfilesController < ApplicationController
     end
 
     @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
-    @articles = user.favorited_articles
+    @articles = user.favorited_articles(user)
 
     respond_to do |format|
-      format.html
+      format.html { render :show }
       format.json { render json: { profile: @profile.to_hash, articles: @articles.map(&:to_hash) } }
     end
   end

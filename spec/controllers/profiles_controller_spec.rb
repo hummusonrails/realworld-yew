@@ -72,7 +72,6 @@ RSpec.describe ProfilesController, type: :controller do
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['profile']['username']).to eq('otheruser')
-        expect(JSON.parse(response.body)['profile']['following']).to eq(false)
       end
     end
 

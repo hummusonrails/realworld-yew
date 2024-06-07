@@ -1,6 +1,6 @@
 class Profile
   include ActiveModel::Model
-  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :following, :type
+  attr_accessor :id, :username, :email, :password_digest, :bio, :image, :following, :type, :favorites
 
   def to_hash
     {
@@ -9,7 +9,8 @@ class Profile
       'password_digest' => password_digest,
       'bio' => bio,
       'image' => image,
-      'following' => following
+      'following' => following || [],
+      'favorites' => favorites || []
     }
   end
 end

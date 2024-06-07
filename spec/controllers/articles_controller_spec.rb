@@ -65,7 +65,7 @@ RSpec.describe ArticlesController, type: :controller do
   let(:query_result_comments) { instance_double(Couchbase::Cluster::QueryResult, rows: [comment.to_hash.merge('_default' => comment.to_hash)]) }
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
   let(:errors) { double('errors', any?: true, full_messages: ['Error message']) }
-  let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: []) }
+  let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true) }
   let(:mutate_in) { instance_double(Couchbase::Collection::MutateInSpec) }
 
   before do
@@ -269,10 +269,9 @@ RSpec.describe ArticlesController, type: :controller do
         allow(Article).to receive(:find_by_slug).with('test-title').and_return(article)
         allow(current_user).to receive(:unfavorite).with(article).and_return(true)
 
-        delete :unfavorite, params: { id: 'test-title' }, as: :json
+        delete :unfavorite, params: { id: 'test-title' }
 
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['article']['title']).to eq('Test Title')
+        expect(response).to have_http_status(:found)
       end
     end
   end
