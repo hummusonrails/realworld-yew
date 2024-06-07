@@ -13,7 +13,11 @@
         </div>
         <%= button_to 'Follow', follow_profile_path(@article.author.username), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
         &nbsp;&nbsp;
-        <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <% if @is_favorited %>
+          <%= button_to 'Unfavorite Post', unfavorite_article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-primary' %>
+        <% else %>
+          <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <% end %>        
         <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
         <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
       </div>
@@ -45,7 +49,11 @@
         </div>
         <%= button_to 'Follow', follow_profile_path(@article.author.username), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
         &nbsp;
-        <%= button_to 'Favorite Article', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <% if @is_favorited %>
+          <%= button_to 'Unfavorite Post', unfavorite_article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-primary' %>
+        <% else %>
+          <%= button_to 'Favorite Post', favorite_article_path(@article.slug), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+        <% end %>
         <%= link_to 'Edit Article', edit_article_path(@article.id), class: 'btn btn-sm btn-outline-secondary' %>
         <%= button_to 'Delete Article', article_path(@article.id), method: :delete, class: 'btn btn-sm btn-outline-danger' %>
       </div>

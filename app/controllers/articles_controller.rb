@@ -10,6 +10,8 @@ class ArticlesController < ApplicationController
 
   def show
     @article = Article.find_by_slug(params[:id])
+    @is_favorited = current_user.favorited?(@article) if current_user
+
     if @article
       @comment = Comment.new
 
@@ -70,14 +72,56 @@ class ArticlesController < ApplicationController
 
   def favorite
     article = Article.find_by_slug(params[:id])
+
+    if article.nil?
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'Article not found' }
+        format.json { render json: { errors: ['Article not found'] }, status: :not_found }
+      end
+      return
+    end
+
+    if current_user.favorited?(article)
+      respond_to do |format|
+        format.html { redirect_to article_path(article.slug), alert: 'Article already favorited.' }
+        format.json { render json: { errors: ['Article already favorited'] }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     current_user.favorite(article)
-    render json: { article: article.to_hash }
+
+    respond_to do |format|
+      format.html { redirect_to article_path(article.slug), notice: 'Article favorited successfully.' }
+      format.json { render json: { article: article.to_hash } }
+    end
   end
 
   def unfavorite
     article = Article.find_by_slug(params[:id])
+
+    if article.nil?
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'Article not found' }
+        format.json { render json: { errors: ['Article not found'] }, status: :not_found }
+      end
+      return
+    end
+
+    unless current_user.favorited?(article)
+      respond_to do |format|
+        format.html { redirect_to article_path(article.slug), alert: 'Article not favorited.' }
+        format.json { render json: { errors: ['Article not favorited'] }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     current_user.unfavorite(article)
-    render json: { article: article.to_hash }
+
+    respond_to do |format|
+      format.html { redirect_to article_path(article.slug), notice: 'Article unfavorited successfully.' }
+      format.json { render json: { article: article.to_hash } }
+    end
   end
 
   private

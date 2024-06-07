@@ -35,7 +35,7 @@ class ProfilesController < ApplicationController
     @articles = user.favorited_articles
 
     respond_to do |format|
-      format.html
+      format.html { render :show }
       format.json { render json: { profile: @profile.to_hash, articles: @articles.map(&:to_hash) } }
     end
   end
