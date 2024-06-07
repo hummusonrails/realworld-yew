@@ -98,7 +98,7 @@ class User
     following.include?(user.id)
   end
 
-  def favorited_articles(user)
+  def favorited_articles
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
     result = collection.lookup_in(id, [

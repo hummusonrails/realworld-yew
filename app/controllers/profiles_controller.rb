@@ -32,7 +32,7 @@ class ProfilesController < ApplicationController
     end
 
     @profile = Profile.new(user.to_hash.merge(following: current_user&.following?(user)))
-    @articles = user.favorited_articles(user)
+    @articles = user.favorited_articles
 
     respond_to do |format|
       format.html { render :show }
