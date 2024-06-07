@@ -45,12 +45,19 @@ class ArticlesController < ApplicationController
     end
   end
 
+  def edit
+    @article = Article.find_by_slug(params[:id])
+    if @article.author_id != current_user.id
+      redirect_to article_path(@article.slug), alert: 'You are not authorized to edit this article.'
+    end
+  end
+
   def update
     article = current_user.find_article_by_slug(params[:id])
     if article.update(article_params)
-      render json: { article: article.to_hash }
+      redirect_to article_path(article.slug), notice: 'Article updated successfully.'
     else
-      render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
+      redirect_to edit_article_path(article.slug), alert: 'There were errors updating your article.'
     end
   end
 
@@ -58,11 +65,10 @@ class ArticlesController < ApplicationController
     article = Article.find_by_slug(params[:id])
     if article && article.author_id == current_user.id
       article.destroy
+      redirect_to articles_path, notice: 'Article deleted successfully.'
     else
-      render json: { errors: ['Article not found'] }, status: :not_found
-      return
+      redirect_to article_path(article.slug), alert: 'You are not authorized to delete this article.'
     end
-    head :no_content
   end
 
   def feed
@@ -127,6 +133,6 @@ class ArticlesController < ApplicationController
   private
 
   def article_params
-    params.require(:article).permit(:title, :description, :body, tag_list: [])
+    params.require(:article).permit(:title, :description, :body, :tag_list)
   end
 end

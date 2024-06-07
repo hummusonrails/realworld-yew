@@ -164,8 +164,8 @@ RSpec.describe ArticlesController, type: :controller do
 
         put :update, params: { id: 'test-title', article: updated_attributes }, as: :json
 
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['article']['title']).to eq('Updated Title')
+        expect(response).to have_http_status(:found)
+        expect(flash[:notice]).to eq('Article updated successfully.')
       end
 
       it 'returns an error if the article cannot be updated' do
@@ -179,9 +179,10 @@ RSpec.describe ArticlesController, type: :controller do
 
         allow(Article).to receive(:find_by_slug).and_return(article)
 
-        put :update, params: { id: 'test-title', article: { title: 'Not working'} }, as: :json
+        put :update, params: { id: 'test-title', article: { title: 'Not working'} }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:found)
+        expect(flash[:alert]).to eq('There were errors updating your article.')
       end
     end
 
@@ -192,7 +193,7 @@ RSpec.describe ArticlesController, type: :controller do
 
         put :update, params: { id: 'test-title', article: { title: 'Updated Title' } }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:found)
       end
     end
   end
@@ -205,7 +206,7 @@ RSpec.describe ArticlesController, type: :controller do
 
         delete :destroy, params: { id: 'test-title' }
 
-        expect(response).to have_http_status(:no_content)
+        expect(response).to have_http_status(:found)
       end
     end
 
@@ -219,7 +220,7 @@ RSpec.describe ArticlesController, type: :controller do
 
         delete :destroy, params: { id: 'test-title' }
 
-        expect(response).to have_http_status(:no_content)
+        expect(response).to have_http_status(:found)
       end
     end
   end
