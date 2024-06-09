@@ -4,15 +4,7 @@ class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    if params[:feed] == 'your' && logged_in?
-      @feed_articles = current_user.feed.map do |article|
-        { article: article, favorited: current_user.favorited?(article) }
-      end
-    else
-      @articles = Article.all.map do |article|
-        { article: article, favorited: current_user&.favorited?(article) }
-      end
-    end
+    @articles = set_articles_based_on_feed
     @tags = Tag.all || []
     render :index
   end
@@ -153,6 +145,18 @@ class ArticlesController < ApplicationController
       root_path
     else
       article_path(article)
+    end
+  end
+
+  def set_articles_based_on_feed
+    if params[:feed] == 'your' && logged_in?
+      @articles = current_user.feed.map do |article|
+        { article: article, favorited: current_user.favorited?(article), global: false }
+      end
+    else
+      @articles = Article.all.map do |article|
+        { article: article, favorited: current_user&.favorited?(article), global: true }
+      end
     end
   end
 end

@@ -23,8 +23,8 @@
         </div>
 
         <% if params[:feed] == 'your' %>
-          <% if @feed_articles.any? %>
-            <% @feed_articles.each do |article_hash| %>
+          <% if @articles.any? { |article| article[:global] == false } %>
+            <% @articles.each do |article_hash| %>
               <% article = article_hash[:article] %>
               <div class="article-preview" id="article_<%= article.id %>">
                 <div class="article-meta">
@@ -58,7 +58,7 @@
               No articles are here... yet. Maybe follow some authors?
             </div>
           <% end %>
-        <% elsif @articles %>
+        <% elsif @articles && @articles.any? { |article| article[:global] } %>
           <% @articles.each do |article_hash| %>
             <% article = article_hash[:article] %>
             <% favorited = article_hash[:favorited] %>
