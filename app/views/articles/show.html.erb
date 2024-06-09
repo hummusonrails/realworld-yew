@@ -11,7 +11,11 @@
           <%= link_to @article.author.username, show_users_path(@article.author.username), class: 'author' %>
           <span class="date"><%= @article.created_at.strftime('%B %d, %Y') %></span>
         </div>
-        <%= button_to 'Follow', follow_profile_path(@article.author.username), method: :post, class: 'btn btn-sm btn-outline-secondary' %>
+        <% if @current_user && @current_user.username != @article.author.username %>
+            <%= link_to (current_user.following?(@article.author) ? 'Unfollow' : 'Follow') + " #{@article.author.username}", follow_profile_path(@profile.username), method: :post, class: "btn btn-sm btn-outline-secondary action-btn" %>
+        <% else %>
+            <%= link_to 'Edit Profile Settings', settings_users_path(@current_user), class: "btn btn-sm btn-outline-secondary action-btn" %>
+        <% end %>
         &nbsp;&nbsp;
         <% if @is_favorited %>
           <%= button_to 'Unfavorite Post', unfavorite_article_path(@article.slug), method: :delete, class: 'btn btn-sm btn-outline-primary' %>

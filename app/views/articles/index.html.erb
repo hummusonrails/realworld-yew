@@ -13,53 +13,88 @@
           <ul class="nav nav-pills outline-active">
             <% if logged_in? %>
               <li class="nav-item">
-                <a class="nav-link" href="#">Your Feed</a>
+                <%= link_to 'Your Feed', articles_path(feed: 'your'), class: "nav-link #{'active' if params[:feed] == 'your'}" %>
               </li>
             <% end %>
             <li class="nav-item">
-              <a class="nav-link active" href="#">Global Feed</a>
+              <%= link_to 'Global Feed', articles_path(feed: 'global'), class: "nav-link #{'active' if params[:feed] != 'your'}" %>
             </li>
           </ul>
         </div>
 
-        <% if @articles %>
-        <% @articles.each do |article_hash| %>
-          <% article = article_hash[:article] %>
-          <% favorited = article_hash[:favorited] %>
-
-          <div class="article-preview" id="article_<%= article.id %>">
-            <div class="article-meta">
-              <a href="<%= profile_path(article.author.username) %>"><img src="<%= article.author.image %>" /></a>
-              <div class="info">
-                <a href="<%= profile_path(article.author.username) %>" class="author"><%= article.author.username %></a>
-                <span class="date"><%= article.created_at.strftime('%B %e, %Y') %></span>
+        <% if params[:feed] == 'your' %>
+          <% if @feed_articles.any? %>
+            <% @feed_articles.each do |article_hash| %>
+              <% article = article_hash[:article] %>
+              <div class="article-preview" id="article_<%= article.id %>">
+                <div class="article-meta">
+                  <a href="<%= profile_path(article.author.username) %>"><img src="<%= article.author.image %>" /></a>
+                  <div class="info">
+                    <a href="<%= profile_path(article.author.username) %>" class="author"><%= article.author.username %></a>
+                    <span class="date"><%= article.created_at.strftime('%B %e, %Y') %></span>
+                  </div>
+                  <%= button_to current_user.favorited?(article) ? unfavorite_article_path(article.slug) : favorite_article_path(article.slug), 
+                      method: current_user.favorited?(article) ? :delete : :post, 
+                      class: 'btn btn-outline-primary btn-sm pull-xs-right', 
+                      remote: true, 
+                      data: { turbo_frame: "article_#{article.id}" } do %>
+                    <i class="ion-heart"></i> <span id="favorites_count_<%= article.id %>"><%= article.favorites_count %></span>
+                  <% end %>
+                </div>
+                <a href="<%= article_path(article.slug) %>" class="preview-link">
+                  <h1><%= article.title %></h1>
+                  <p><%= article.description %></p>
+                  <span>Read more...</span>
+                  <ul class="tag-list">
+                    <% article.tags.each do |tag| %>
+                      <li class="tag-default tag-pill tag-outline"><%= tag %></li>
+                    <% end %>
+                  </ul>
+                </a>
               </div>
-            <%= button_to favorited ? unfavorite_article_path(article.slug) : favorite_article_path(article.slug), 
-                method: favorited ? :delete : :post, 
-                class: 'btn btn-outline-primary btn-sm pull-xs-right', 
-                remote: true, 
-                data: { turbo_frame: "article_#{article.id}" } do %>
-              <i class="ion-heart"></i> <span id="favorites_count_<%= article.id %>"><%= article.favorites_count %></span>
             <% end %>
+          <% else %>
+            <div class="article-preview">
+              No articles are here... yet. Maybe follow some authors?
             </div>
-            <a href="<%= article_path(article.slug) %>" class="preview-link">
-              <h1><%= article.title %></h1>
-              <p><%= article.description %></p>
-              <span>Read more...</span>
-              <ul class="tag-list">
-                <% article.tags.each do |tag| %>
-                  <li class="tag-default tag-pill tag-outline"><%= tag %></li>
-                <% end %>
-              </ul>
-            </a>
-          </div>
-        <% end %>
+          <% end %>
+        <% elsif @articles %>
+          <% @articles.each do |article_hash| %>
+            <% article = article_hash[:article] %>
+            <% favorited = article_hash[:favorited] %>
+
+            <div class="article-preview" id="article_<%= article.id %>">
+              <div class="article-meta">
+                <a href="<%= profile_path(article.author.username) %>"><img src="<%= article.author.image %>" /></a>
+                <div class="info">
+                  <a href="<%= profile_path(article.author.username) %>" class="author"><%= article.author.username %></a>
+                  <span class="date"><%= article.created_at.strftime('%B %e, %Y') %></span>
+                </div>
+              <%= button_to favorited ? unfavorite_article_path(article.slug) : favorite_article_path(article.slug), 
+                  method: favorited ? :delete : :post, 
+                  class: 'btn btn-outline-primary btn-sm pull-xs-right', 
+                  remote: true, 
+                  data: { turbo_frame: "article_#{article.id}" } do %>
+                <i class="ion-heart"></i> <span id="favorites_count_<%= article.id %>"><%= article.favorites_count %></span>
+              <% end %>
+              </div>
+              <a href="<%= article_path(article.slug) %>" class="preview-link">
+                <h1><%= article.title %></h1>
+                <p><%= article.description %></p>
+                <span>Read more...</span>
+                <ul class="tag-list">
+                  <% article.tags.each do |tag| %>
+                    <li class="tag-default tag-pill tag-outline"><%= tag %></li>
+                  <% end %>
+                </ul>
+              </a>
+            </div>
+          <% end %>
         <% else %>
           <div class="article-preview">
             No articles are here... yet.
           </div>
         <% end %>
-
         <ul class="pagination">
           <li class="page-item active">
             <a class="page-link" href="">1</a>

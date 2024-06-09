@@ -1,22 +1,26 @@
+require 'json'
+
 class ArticlesController < ApplicationController
   before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
 
   def index
-    articles = Article.all
-    @articles = articles.nil? ? [] : articles.map do |article|
-      {
-        article: article,
-        favorited: current_user ? current_user.favorited?(article) : false
-      }
+    if params[:feed] == 'your' && logged_in?
+      @feed_articles = current_user.feed.map do |article|
+        { article: article, favorited: current_user.favorited?(article) }
+      end
+    else
+      @articles = Article.all.map do |article|
+        { article: article, favorited: current_user&.favorited?(article) }
+      end
     end
     @tags = Tag.all || []
-
     render :index
   end
 
   def show
     @article = Article.find_by_slug(params[:id])
     @is_favorited = current_user.favorited?(@article) if current_user
+    @is_followed = current_user.following?(@article.author) if current_user
 
     if @article
       @comment = Comment.new
