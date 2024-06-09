@@ -3,14 +3,19 @@ require 'couchbase'
 require 'securerandom'
 
 RSpec.describe User, type: :model do
+  let(:current_user) { User.new(id: 'current-user-id', username: 'currentuser', email: 'currentuser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Current user bio', image: 'current_image.png') }
+  let(:other_user) { User.new(id: 'other-user-id', username: 'otheruser', email: 'otheruser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Other user bio', image: 'other_image.png') }
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
+  let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true) }
 
   before do
     allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
     allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
     allow(bucket).to receive(:default_collection).and_return(collection)
+    allow(collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
+    allow(collection).to receive(:lookup_in).with(other_user.id, anything).and_return(lookup_in_result)
   end
 
   describe '#save' do
@@ -76,17 +81,14 @@ RSpec.describe User, type: :model do
   describe '#follow' do
     context 'when the user is found to be added' do
       it 'correctly adds a user to the following list of another user' do
-        user = User.new(id: 'user-id')
-        other_user = User.new(id: 'other-user-id')
-
         expect(collection).to receive(:mutate_in).with(
-          'user-id',
+          'current-user-id',
           [an_instance_of(Couchbase::MutateInSpec).and(
             satisfy { |spec| spec.instance_variable_get(:@param) == "\"other-user-id\"" && spec.instance_variable_get(:@path) == 'following' }
           )]
         )
 
-        user.follow(other_user)
+        current_user.follow(other_user)
       end
     end
   end

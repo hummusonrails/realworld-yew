@@ -42,23 +42,57 @@ class ProfilesController < ApplicationController
 
   def follow
     user = User.find_by_username(params[:username])
+
     if user.nil?
-      render json: { errors: ['User not found'] }, status: :not_found
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'User not found' }
+        format.json { render json: { errors: ['User not found'] }, status: :not_found }
+      end
       return
     end
+
+    if current_user.following?(user)
+      respond_to do |format|
+        format.html { redirect_to profile_path(username: user.username), alert: 'User already followed.' }
+        format.json { render json: { errors: ['User already followed'] }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     current_user.follow(user)
-    profile = Profile.new(user.to_hash.merge(following: true))
-    render json: { profile: profile.to_hash }
+    @profile = Profile.new(user.to_hash.merge(following: true))
+
+    respond_to do |format|
+      format.html { redirect_to profile_path(username: user.username), notice: 'User followed successfully.' }
+      format.json { render json: { profile: @profile.to_hash } }
+    end
   end
 
   def unfollow
     user = User.find_by_username(params[:username])
+
     if user.nil?
-      render json: { errors: ['User not found'] }, status: :not_found
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: 'User not found' }
+        format.json { render json: { errors: ['User not found'] }, status: :not_found }
+      end
       return
     end
+
+    unless current_user.following?(user)
+      respond_to do |format|
+        format.html { redirect_to profile_path(username: user.username), alert: 'User not followed.' }
+        format.json { render json: { errors: ['User not followed'] }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     current_user.unfollow(user)
-    profile = Profile.new(user.to_hash.merge(following: false))
-    render json: { profile: profile.to_hash }
+    @profile = Profile.new(user.to_hash.merge(following: false))
+
+    respond_to do |format|
+      format.html { redirect_to profile_path(username: user.username), notice: 'User unfollowed successfully.' }
+      format.json { render json: { profile: @profile.to_hash } }
+    end
   end
 end

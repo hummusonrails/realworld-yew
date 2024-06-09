@@ -10,7 +10,7 @@ RSpec.describe UsersController, type: :controller do
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
-  let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: []) }
+  let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true) }
   let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [current_user.to_hash]) }
   let(:query_result_options) { instance_double(Couchbase::Options::Query, positional_parameters: [current_user.id]) }
 

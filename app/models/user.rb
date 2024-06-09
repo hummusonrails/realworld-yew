@@ -75,6 +75,14 @@ class User
   def follow(user)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('following')])
+    unless exists_result.exists?(0)
+      collection.mutate_in(id, [
+        Couchbase::MutateInSpec.insert('following', [])
+      ])
+    end
+
     collection.mutate_in(id, [
       Couchbase::MutateInSpec.array_add_unique('following', user.id)
     ])
@@ -83,17 +91,40 @@ class User
   def unfollow(user)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('following')])
+    return unless exists_result.exists?(0)
+
+    result = collection.lookup_in(id, [Couchbase::LookupInSpec.get('following')])
+    following = result.content(0)
+
+    return unless following.include?(user.id)
+
+    following.delete(user.id)
+
     collection.mutate_in(id, [
-      Couchbase::MutateInSpec.array_remove('following', user.id)
+      Couchbase::MutateInSpec.replace('following', following)
     ])
   end
 
   def following?(user)
     bucket = Rails.application.config.couchbase_bucket
     collection = bucket.default_collection
+
+    begin
+      exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('following')])
+    rescue Couchbase::Error::DocumentNotFound
+      return false
+    end
+
+    unless exists_result.exists?(0)
+      return false
+    end
+
     result = collection.lookup_in(id, [
       Couchbase::LookupInSpec.get('following')
     ])
+
     following = result.content(0) rescue []
     following.include?(user.id)
   end
@@ -110,7 +141,7 @@ class User
 
   def favorite(article)
     bucket = Rails.application.config.couchbase_bucket
-    collection = bucket.default_collection
+    bucket.default_collection
 
     exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
     unless exists_result.exists?(0)
@@ -197,10 +228,19 @@ class User
   end
 
   def feed
+    feed = []
+
     cluster = Rails.application.config.couchbase_cluster
-    query = "SELECT META().id, * FROM `RealWorldRailsBucket-rails` WHERE `author_id` IN $1 ORDER BY `createdAt` DESC"
-    result = cluster.query(query, [following])
-    result.rows.map { |row| Article.new(row) }
+    options = Couchbase::Options::Query.new
+    options.positional_parameters([following])
+    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `author_id` IN ?", options)
+
+    result.rows.each do |row|
+      parsed_row = JSON.parse(row) rescue row
+      article_data = parsed_row['_default'].merge('id' => parsed_row['id'])
+      feed << Article.new(article_data)
+    end
+    feed
   end
 
   def validate!
