@@ -163,7 +163,7 @@ RSpec.describe ArticlesController, type: :controller do
 
         allow(Article).to receive(:find_by_slug).and_return(article)
 
-        put :update, params: { id: 'test-title', article: updated_attributes }, as: :json
+        put :update, params: { id: 'test-title', article: updated_attributes }
 
         expect(response).to have_http_status(:found)
         expect(flash[:notice]).to eq('Article updated successfully.')

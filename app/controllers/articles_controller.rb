@@ -6,7 +6,11 @@ class ArticlesController < ApplicationController
   def index
     @articles = set_articles_based_on_feed
     @tags = Tag.all || []
-    render :index
+
+    respond_to do |format|
+      format.html { render :index }
+      format.json { render json: { articles: @articles, tags: @tags } }
+    end
   end
 
   def show
@@ -39,37 +43,61 @@ class ArticlesController < ApplicationController
     @article.slug = @article.generate_slug(@article.title)
     @article.created_at ||= Time.now
     @article.updated_at ||= Time.now
-    if @article.save
-      redirect_to article_path(@article.slug), notice: 'Article created successfully.'
-    else
-      flash.now[:alert] = "There were errors saving your article."
-      render :new
+
+    respond_to do |format|
+      if @article.save
+        format.html { redirect_to article_path(@article.slug), notice: 'Article created successfully.' }
+        format.json { render json: { article: @article.to_hash }, status: :created }
+      else
+        format.html do
+          flash.now[:alert] = "There were errors saving your article."
+          render :new
+        end
+        format.json { render json: { errors: @article.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
   def edit
     @article = Article.find_by_slug(params[:id])
-    if @article.author_id != current_user.id
-      redirect_to article_path(@article.slug), alert: 'You are not authorized to edit this article.'
+
+    respond_to do |format|
+      if @article.author_id != current_user.id
+        format.html { redirect_to article_path(@article.slug), alert: 'You are not authorized to edit this article.' }
+        format.json { render json: { errors: ['You are not authorized to edit this article.'] }, status: :forbidden }
+      else
+        format.html
+        format.json { render json: { article: @article.to_hash } }
+      end
     end
   end
 
   def update
     article = current_user.find_article_by_slug(params[:id])
-    if article.update(article_params)
-      redirect_to article_path(article.slug), notice: 'Article updated successfully.'
-    else
-      redirect_to edit_article_path(article.slug), alert: 'There were errors updating your article.'
+
+    respond_to do |format|
+      if article.update(article_params)
+        format.html { redirect_to article_path(article.slug), notice: 'Article updated successfully.' }
+        format.json { render json: { article: article.to_hash }, status: :ok }
+      else
+        format.html { redirect_to edit_article_path(article.slug), alert: 'There were errors updating your article.' }
+        format.json { render json: { errors: article.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
   def destroy
     article = Article.find_by_slug(params[:id])
-    if article && article.author_id == current_user.id
-      article.destroy
-      redirect_to articles_path, notice: 'Article deleted successfully.'
-    else
-      redirect_to article_path(article.slug), alert: 'You are not authorized to delete this article.'
+
+    respond_to do |format|
+      if article && article.author_id == current_user.id
+        article.destroy
+        format.html { redirect_to articles_path, notice: 'Article deleted successfully.' }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to article_path(article.slug), alert: 'You are not authorized to delete this article.' }
+        format.json { render json: { errors: ['You are not authorized to delete this article.'] }, status: :forbidden }
+      end
     end
   end
 
