@@ -65,7 +65,7 @@ class User
     options = Couchbase::Options::Query.new
     options.positional_parameters([username])
     result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `username` = ? LIMIT 1", options)
-    puts result
+
     if result.rows.any?
       row = result.rows.first
       User.new(row["_default"].merge('id' => row['id']))

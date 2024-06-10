@@ -1,4 +1,31 @@
 Rails.application.routes.draw do
+  namespace :api do
+    post 'users/login', to: 'users#login'
+    post 'users', to: 'users#register'
+    get 'user', to: 'users#current'
+    put 'user', to: 'users#update'
+
+    resources :profiles, param: :username, only: [:show] do
+      member do
+        post 'follow'
+        delete 'follow', to: 'profiles#unfollow'
+      end
+    end
+
+    resources :articles, param: :slug do
+      collection do
+        get 'feed'
+      end
+      member do
+        post 'favorite'
+        delete 'unfavorite'
+      end
+      resources :comments, only: [:create, :index, :destroy], param: :id
+    end
+
+    get 'tags', to: 'tags#index'
+  end
+
   resources :users, only: [:create, :new] do
     collection do
       post 'login', to: 'users#login'

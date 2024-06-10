@@ -53,7 +53,6 @@ RSpec.describe ProfilesController, type: :controller do
         allow(current_user).to receive(:follow).with(other_user).and_return(true)
 
         post :follow, params: { username: 'otheruser' }
-        puts response.body
 
         expect(response).to have_http_status(:found)
       end
