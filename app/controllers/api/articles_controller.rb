@@ -24,7 +24,7 @@ module Api
     end
 
     def feed
-      articles = current_user.feed
+      articles = @current_user.feed
       render json: { articles: articles.map(&:to_hash) }
     end
 
@@ -39,7 +39,7 @@ module Api
 
     def create
       article = Article.new(article_params)
-      article.author_id = current_user.id
+      article.author_id = @current_user.id
       if article.save
         render json: { article: article.to_hash }, status: :created
       else
@@ -48,7 +48,7 @@ module Api
     end
 
     def update
-      article = current_user.find_article_by_slug(params[:slug])
+      article = @current_user.find_article_by_slug(params[:slug])
       if article.update(article_params)
         render json: { article: article.to_hash }
       else
@@ -58,7 +58,7 @@ module Api
 
     def destroy
       article = Article.find_by_slug(params[:slug])
-      if article && article.author_id == current_user.id
+      if article && article.author_id == @current_user.id
         article.destroy
         render json: { message: 'Article deleted successfully' }, status: :ok
       else
@@ -68,7 +68,7 @@ module Api
 
     def favorite
       article = Article.find_by_slug(params[:slug])
-      if current_user.favorite(article)
+      if @current_user.favorite(article)
         render json: { article: article.to_hash }
       else
         render json: { errors: ['Unable to favorite article'] }, status: :unprocessable_entity
@@ -77,7 +77,7 @@ module Api
 
     def unfavorite
       article = Article.find_by_slug(params[:slug])
-      if current_user.unfavorite(article)
+      if @current_user.unfavorite(article)
         render json: { article: article.to_hash }
       else
         render json: { errors: ['Unable to unfavorite article'] }, status: :unprocessable_entity
