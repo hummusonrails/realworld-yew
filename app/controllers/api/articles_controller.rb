@@ -1,7 +1,6 @@
 module Api
   class ArticlesController < ApplicationController
-    skip_before_action :authenticate_user, only: [:index, :show]
-    skip_before_action :verify_authenticity_token
+    before_action :authenticate_user, only: [:feed, :create, :update, :destroy, :favorite, :unfavorite]
 
     def index
       @articles = Article.all

@@ -1,7 +1,6 @@
 module Api
   class CommentsController < ApplicationController
-    skip_before_action :authenticate_user, only: [:index]
-    skip_before_action :verify_authenticity_token
+    before_action :authenticate_user, only: [:create, :destroy]
 
     def index
       article = Article.find_by_slug(params[:article_slug])
