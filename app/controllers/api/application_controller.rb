@@ -4,7 +4,12 @@ class Api::ApplicationController < ActionController::Base
 
   def authenticate_user
     token = request.headers['Authorization'].split(' ').last
-    decoded = JWT.decode(token, Rails.application.secret_key_base).first
+    begin
+      decoded = JWT.decode(token, Rails.application.secret_key_base).first
+    rescue JWT::DecodeError
+      render json: { errors: ['Invalid token'] }, status: :unauthorized
+      return
+    end
     @current_user = User.find(decoded['user_id'])
     render json: { errors: ['Not Authenticated'] }, status: :unauthorized unless @current_user
     @current_user
