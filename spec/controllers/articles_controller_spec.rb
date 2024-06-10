@@ -3,7 +3,10 @@ require 'couchbase'
 require 'jwt'
 
 RSpec.describe ArticlesController, type: :controller do
-  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'default_profile.png') }
+  let(:current_user) do
+    User.new(id: 'user-id', username: 'testuser', email: 'test@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'default_profile.png')
+  end
   let(:article_data) do
     {
       '_default' => {
@@ -16,7 +19,7 @@ RSpec.describe ArticlesController, type: :controller do
         'created_at' => Time.now,
         'updated_at' => Time.now,
         'type' => 'article',
-        'favorites_count' => 0,
+        'favorites_count' => 0
       },
       'id' => 'article-id'
     }
@@ -61,9 +64,15 @@ RSpec.describe ArticlesController, type: :controller do
   let(:cluster) { instance_double(Couchbase::Cluster) }
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
-  let(:query_result_article) { instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)]) }
-  let(:query_result_articles) { instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)]) }
-  let(:query_result_comments) { instance_double(Couchbase::Cluster::QueryResult, rows: [comment.to_hash.merge('_default' => comment.to_hash)]) }
+  let(:query_result_article) do
+    instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)])
+  end
+  let(:query_result_articles) do
+    instance_double(Couchbase::Cluster::QueryResult, rows: [article.to_hash.merge('_default' => article.to_hash)])
+  end
+  let(:query_result_comments) do
+    instance_double(Couchbase::Cluster::QueryResult, rows: [comment.to_hash.merge('_default' => comment.to_hash)])
+  end
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
   let(:errors) { double('errors', any?: true, full_messages: ['Error message']) }
   let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true) }
@@ -79,9 +88,15 @@ RSpec.describe ArticlesController, type: :controller do
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
     allow(controller).to receive(:current_user).and_return(current_user)
     allow(controller).to receive(:authenticate_user).and_return(true)
-    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", an_instance_of(Couchbase::Options::Query)).and_return(query_result_article)
-    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", an_instance_of(Couchbase::Options::Query)).and_return(query_result_articles)
-    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", an_instance_of(Couchbase::Options::Query)).and_return(query_result_comments)
+    allow(mock_cluster).to receive(:query).with(
+      'SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1', an_instance_of(Couchbase::Options::Query)
+    ).and_return(query_result_article)
+    allow(mock_cluster).to receive(:query).with(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", an_instance_of(Couchbase::Options::Query)
+    ).and_return(query_result_articles)
+    allow(mock_cluster).to receive(:query).with(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", an_instance_of(Couchbase::Options::Query)
+    ).and_return(query_result_comments)
     allow(mock_collection).to receive(:upsert)
     allow(mock_collection).to receive(:remove)
     allow(mock_collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
@@ -120,7 +135,9 @@ RSpec.describe ArticlesController, type: :controller do
         allow(Article).to receive(:new).and_return(article)
         allow(article).to receive(:save).and_return(true)
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tagList: ['tag1', 'tag2'] } }
+        post :create,
+             params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body',
+                                  tagList: %w[tag1 tag2] } }
 
         expect(response).to have_http_status(:found)
         expect(flash[:notice]).to eq('Article created successfully.')
@@ -131,7 +148,9 @@ RSpec.describe ArticlesController, type: :controller do
         allow(article).to receive(:save).and_return(false)
         allow(article).to receive(:errors).and_return(errors)
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: ['tag1', 'tag2'] } }
+        post :create,
+             params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body',
+                                  tag_list: %w[tag1 tag2] } }
 
         expect(response).to have_http_status(:ok)
         expect(flash[:alert]).to eq('There were errors saving your article.')
@@ -142,7 +161,9 @@ RSpec.describe ArticlesController, type: :controller do
       it 'returns an error' do
         request.headers['Authorization'] = nil
 
-        post :create, params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: ['tag1', 'tag2'] } }
+        post :create,
+             params: { article: { title: 'Test Title', description: 'Test Description', body: 'Test Body',
+                                  tag_list: %w[tag1 tag2] } }
 
         expect(response).to have_http_status(:ok)
         expect(flash[:alert]).to eq('There were errors saving your article.')
@@ -156,7 +177,9 @@ RSpec.describe ArticlesController, type: :controller do
         allow(mock_collection).to receive(:get).with(current_user.id).and_return(get_result)
         allow(mock_collection).to receive(:upsert).and_return(true)
 
-        allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result_article)
+        allow(mock_cluster).to receive(:query).with(
+          'SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1', anything
+        ).and_return(query_result_article)
 
         allow(article).to receive(:update).and_call_original
 
@@ -170,7 +193,9 @@ RSpec.describe ArticlesController, type: :controller do
 
       it 'returns an error if the article cannot be updated' do
         allow(mock_collection).to receive(:get).with(current_user.id).and_return(get_result)
-        allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1", anything).and_return(query_result_article)
+        allow(mock_cluster).to receive(:query).with(
+          'SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `slug` = ? AND `author_id` = ? LIMIT 1', anything
+        ).and_return(query_result_article)
 
         allow(mock_collection).to receive(:upsert).and_return(false)
 
@@ -179,7 +204,7 @@ RSpec.describe ArticlesController, type: :controller do
 
         allow(Article).to receive(:find_by_slug).and_return(article)
 
-        put :update, params: { id: 'test-title', article: { title: 'Not working'} }
+        put :update, params: { id: 'test-title', article: { title: 'Not working' } }
 
         expect(response).to have_http_status(:found)
         expect(flash[:alert]).to eq('There were errors updating your article.')

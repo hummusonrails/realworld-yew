@@ -1,6 +1,6 @@
 module Api
   class UsersController < ApplicationController
-    before_action :authenticate_user, only: [:update, :current]
+    before_action :authenticate_user, only: %i[update current]
 
     def login
       user = User.find_by_email(user_params[:email])
@@ -14,7 +14,8 @@ module Api
     def register
       user = User.new(user_params)
       if user.save
-        render json: { user: user.to_hash.except('password_digest').merge(token: encode_token(user_id: user.id)) }, status: :created
+        render json: { user: user.to_hash.except('password_digest').merge(token: encode_token(user_id: user.id)) },
+               status: :created
       else
         render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
       end

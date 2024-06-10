@@ -5,7 +5,9 @@ RSpec.describe TagsController, type: :controller do
   let(:tag) { Tag.new(name: 'Example Tag', type: 'tag') }
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
-  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => tag.to_hash.merge('id' => 'tag-id') }]) }
+  let(:query_result) do
+    instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => tag.to_hash.merge('id' => 'tag-id') }])
+  end
   let(:cluster) { instance_double(Couchbase::Cluster) }
 
   before do

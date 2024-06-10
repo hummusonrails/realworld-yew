@@ -3,8 +3,14 @@ require 'couchbase'
 require 'jwt'
 
 RSpec.describe ProfilesController, type: :controller do
-  let(:current_user) { User.new(id: 'current-user-id', username: 'currentuser', email: 'currentuser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Current user bio', image: 'current_image.png') }
-  let(:other_user) { User.new(id: 'other-user-id', username: 'otheruser', email: 'otheruser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Other user bio', image: 'other_image.png') }
+  let(:current_user) do
+    User.new(id: 'current-user-id', username: 'currentuser', email: 'currentuser@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Current user bio', image: 'current_image.png')
+  end
+  let(:other_user) do
+    User.new(id: 'other-user-id', username: 'otheruser', email: 'otheruser@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Other user bio', image: 'other_image.png')
+  end
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
@@ -21,7 +27,9 @@ RSpec.describe ProfilesController, type: :controller do
     allow(mock_collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
     allow(mock_collection).to receive(:lookup_in).with(other_user.id, anything).and_return(lookup_in_result)
     allow(mock_collection).to receive(:mutate_in)
-    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", anything).and_return(query_result_articles)
+    allow(mock_cluster).to receive(:query).with(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", anything
+    ).and_return(query_result_articles)
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
     request.headers['Authorization'] = "Bearer #{token}"
     allow(controller).to receive(:current_user).and_return(current_user)

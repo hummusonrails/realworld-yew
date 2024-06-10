@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
     else
       redirect_to login_path, alert: 'You must be logged in to access this page.' unless current_user
     end
-  rescue
+  rescue StandardError
     render json: { errors: ['Not Authenticated'] }, status: :unauthorized if request.format.json?
   end
 end

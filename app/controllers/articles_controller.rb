@@ -1,7 +1,7 @@
 require 'json'
 
 class ArticlesController < ApplicationController
-  before_action :authenticate_user, only: [:create, :update, :destroy, :favorite, :unfavorite, :feed]
+  before_action :authenticate_user, only: %i[create update destroy favorite unfavorite feed]
 
   def index
     @articles = set_articles_based_on_feed
@@ -50,7 +50,7 @@ class ArticlesController < ApplicationController
         format.json { render json: { article: @article.to_hash }, status: :created }
       else
         format.html do
-          flash.now[:alert] = "There were errors saving your article."
+          flash.now[:alert] = 'There were errors saving your article.'
           render :new
         end
         format.json { render json: { errors: @article.errors.full_messages }, status: :unprocessable_entity }
@@ -177,14 +177,14 @@ class ArticlesController < ApplicationController
   end
 
   def set_articles_based_on_feed
-    if params[:feed] == 'your' && logged_in?
-      @articles = current_user.feed.map do |article|
-        { article: article, favorited: current_user.favorited?(article), global: false }
-      end
-    else
-      @articles = Article.all.map do |article|
-        { article: article, favorited: current_user&.favorited?(article), global: true }
-      end
-    end
+    @articles = if params[:feed] == 'your' && logged_in?
+                  current_user.feed.map do |article|
+                    { article:, favorited: current_user.favorited?(article), global: false }
+                  end
+                else
+                  Article.all.map do |article|
+                    { article:, favorited: current_user&.favorited?(article), global: true }
+                  end
+                end
   end
 end

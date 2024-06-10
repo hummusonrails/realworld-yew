@@ -3,8 +3,14 @@ require 'couchbase'
 require 'jwt'
 
 RSpec.describe UsersController, type: :controller do
-  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'test_image.png') }
-  let(:article) { Article.new(title: 'Test Title', description: 'Test Description', body: 'Test Body', created_at: Time.now, updated_at: Time.now, tag_list: ['tag1', 'tag2']) }
+  let(:current_user) do
+    User.new(id: 'user-id', username: 'testuser', email: 'test@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Test bio', image: 'test_image.png')
+  end
+  let(:article) do
+    Article.new(title: 'Test Title', description: 'Test Description', body: 'Test Body', created_at: Time.now,
+                updated_at: Time.now, tag_list: %w[tag1 tag2])
+  end
   let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
@@ -35,7 +41,9 @@ RSpec.describe UsersController, type: :controller do
       it 'creates a new user and returns the user with a token' do
         allow(current_user).to receive(:save).and_return(true)
 
-        post :create, params: { user: { username: 'testuser', email: 'test@example.com', password: 'password', bio: 'Test bio', image: 'test_image.png' } }
+        post :create,
+             params: { user: { username: 'testuser', email: 'test@example.com', password: 'password', bio: 'Test bio',
+                               image: 'test_image.png' } }
 
         expect(response).to have_http_status(:found)
         expect(flash[:notice]).to eq('User created successfully. Please log in.')
@@ -47,7 +55,9 @@ RSpec.describe UsersController, type: :controller do
         allow(current_user).to receive(:save).and_return(false)
         allow(current_user).to receive_message_chain(:errors, :full_messages).and_return(['Error message'])
 
-        post :create, params: { user: { username: 'testuser', email: 'test@example.com', password: 'password', bio: 'Test bio', image: 'test_image.png' } }
+        post :create,
+             params: { user: { username: 'testuser', email: 'test@example.com', password: 'password', bio: 'Test bio',
+                               image: 'test_image.png' } }
 
         expect(response).to have_http_status(:ok)
         expect(flash[:alert])
@@ -114,7 +124,7 @@ RSpec.describe UsersController, type: :controller do
         allow(mock_collection).to receive(:upsert).and_return(true)
 
         updated_attributes = { username: 'updateduser', bio: 'Updated bio' }
-        allow(current_user).to receive(:update).and_wrap_original do |m, *args|
+        allow(current_user).to receive(:update).and_wrap_original do |m, *_args|
           m.call(updated_attributes)
         end
 

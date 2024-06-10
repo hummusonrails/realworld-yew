@@ -3,8 +3,14 @@ require 'couchbase'
 require 'securerandom'
 
 RSpec.describe User, type: :model do
-  let(:current_user) { User.new(id: 'current-user-id', username: 'currentuser', email: 'currentuser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Current user bio', image: 'current_image.png') }
-  let(:other_user) { User.new(id: 'other-user-id', username: 'otheruser', email: 'otheruser@example.com', password_digest: BCrypt::Password.create('password'), bio: 'Other user bio', image: 'other_image.png') }
+  let(:current_user) do
+    User.new(id: 'current-user-id', username: 'currentuser', email: 'currentuser@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Current user bio', image: 'current_image.png')
+  end
+  let(:other_user) do
+    User.new(id: 'other-user-id', username: 'otheruser', email: 'otheruser@example.com',
+             password_digest: BCrypt::Password.create('password'), bio: 'Other user bio', image: 'other_image.png')
+  end
 
   before do
     mock_couchbase_methods
@@ -12,8 +18,14 @@ RSpec.describe User, type: :model do
     allow(User).to receive(:find_by_username).with('currentuser').and_return(current_user)
     allow(User).to receive(:find_by_username).with('otheruser').and_return(other_user)
     allow(User).to receive(:find).with(current_user.id).and_return(current_user)
-    allow(mock_collection).to receive(:lookup_in).with(current_user.id, anything).and_return(instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true))
-    allow(mock_collection).to receive(:lookup_in).with(other_user.id, anything).and_return(instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true))
+    allow(mock_collection).to receive(:lookup_in).with(current_user.id,
+                                                       anything).and_return(instance_double(
+                                                                              Couchbase::Collection::LookupInResult, content: [], exists?: true
+                                                                            ))
+    allow(mock_collection).to receive(:lookup_in).with(other_user.id,
+                                                       anything).and_return(instance_double(
+                                                                              Couchbase::Collection::LookupInResult, content: [], exists?: true
+                                                                            ))
   end
 
   describe '#save' do
@@ -44,7 +56,9 @@ RSpec.describe User, type: :model do
     context 'when a user is found with the given email' do
       it 'returns a User object when a user with the given email exists in the Couchbase bucket' do
         email = 'test@example.com'
-        query_result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "_default" => { 'username' => 'testuser', 'email' => email, 'password_digest' => 'password' }, 'id' => 'user-id' }])
+        query_result = instance_double(Couchbase::Cluster::QueryResult,
+                                       rows: [{ '_default' => { 'username' => 'testuser', 'email' => email, 'password_digest' => 'password' },
+                                                'id' => 'user-id' }])
         allow(mock_cluster).to receive(:query).and_return(query_result)
 
         user = User.find_by_email(email)
@@ -83,7 +97,9 @@ RSpec.describe User, type: :model do
         expect(mock_collection).to receive(:mutate_in).with(
           'current-user-id',
           [an_instance_of(Couchbase::MutateInSpec).and(
-            satisfy { |spec| spec.instance_variable_get(:@param) == "\"other-user-id\"" && spec.instance_variable_get(:@path) == 'following' }
+            satisfy do |spec|
+              spec.instance_variable_get(:@param) == '"other-user-id"' && spec.instance_variable_get(:@path) == 'following'
+            end
           )]
         )
 

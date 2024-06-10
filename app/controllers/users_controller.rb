@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :authenticate_user, only: [:update, :show]
+  before_action :authenticate_user, only: %i[update show]
 
   def new
     @user = User.new
@@ -44,7 +44,7 @@ class UsersController < ApplicationController
         end
       end
     else
-      Rails.logger.debug "User authentication failed"
+      Rails.logger.debug 'User authentication failed'
       respond_to do |format|
         format.json { render json: { errors: ['Invalid email or password'] }, status: :unprocessable_entity }
         format.html do
