@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class CommentsController < ApplicationController
-  before_action :authenticate_user, only: [:create, :destroy]
+  before_action :authenticate_user, only: %i[create destroy]
 
   def index
     article = Article.find_by_slug(params[:article_id])

@@ -1,6 +1,9 @@
+# frozen_string_literal: true
+
 class Article
   include ActiveModel::Model
-  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type, :favorites, :favorites_count
+  attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type,
+                :favorites, :favorites_count
 
   validates :title, presence: true
   validates :body, presence: true
@@ -55,11 +58,13 @@ class Article
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
     options.positional_parameters([slug])
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options)
-    if result.rows.any?
-      row = result.rows.first
-      Article.new(row['_default'].merge('id' => row['id']))
-    end
+    result = cluster.query(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options
+    )
+    return unless result.rows.any?
+
+    row = result.rows.first
+    Article.new(row['_default'].merge('id' => row['id']))
   end
 
   def self.all
@@ -83,7 +88,9 @@ class Article
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
     options.positional_parameters([id])
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", options)
+    result = cluster.query(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `article_id` = ?", options
+    )
     comments = []
     if result.rows.any?
       comments = result.rows.map do |row|
@@ -106,6 +113,7 @@ class Article
 
   def tags
     return [] if tag_list.blank?
+
     tag_list.is_a?(String) ? tag_list.split(',').map(&:strip) : tag_list
   end
 
@@ -122,7 +130,8 @@ class Article
 
   def generate_slug(title)
     return nil if title.nil?
-    @slug ||= title.parameterize(separator: '-')
+
+    @generate_slug ||= title.parameterize(separator: '-')
   end
 
   def author

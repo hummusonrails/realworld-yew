@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 # spec/support/view_helper.rb
 module ViewHelper
   def stub_image_tag
     allow_any_instance_of(ActionView::Helpers::AssetTagHelper).to receive(:image_tag) do |instance, *args|
       src = args.first
-      if src.start_with?("http") || src.include?("default_profile.png")
+      if src.start_with?('http') || src.include?('default_profile.png')
         instance.send(:original_image_tag, *args)
       else
-        instance.send(:original_image_tag, "placeholder_image.png", alt: args.last[:alt])
+        instance.send(:original_image_tag, 'placeholder_image.png', alt: args.last[:alt])
       end
     end
   end

@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class ProfilesController < ApplicationController
-  before_action :authenticate_user, only: [:follow, :unfollow]
+  before_action :authenticate_user, only: %i[follow unfollow]
 
   def show
     user = User.find_by_username(params[:username])

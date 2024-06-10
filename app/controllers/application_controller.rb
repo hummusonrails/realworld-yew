@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::Base
   helper_method :logged_in?, :current_user
 
@@ -22,7 +24,7 @@ class ApplicationController < ActionController::Base
     else
       redirect_to login_path, alert: 'You must be logged in to access this page.' unless current_user
     end
-  rescue
+  rescue StandardError
     render json: { errors: ['Not Authenticated'] }, status: :unauthorized if request.format.json?
   end
 end

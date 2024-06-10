@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Tag
   include ActiveModel::Model
   attr_accessor :id, :name, :type
@@ -22,18 +24,17 @@ class Tag
     cluster = Rails.application.config.couchbase_cluster
     query = "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'tag'"
     result = cluster.query(query)
-    tags = if result.rows.any?
-             result.rows.map do |row|
-               tag_data = row
-               next if tag_data.nil?
+    if result.rows.any?
+      result.rows.map do |row|
+        tag_data = row
+        next if tag_data.nil?
 
-               tag_data["id"] = row["id"]
-               Tag.new(tag_data['_default'])
-             end.compact
-           else
-             []
-           end
-    tags
+        tag_data['id'] = row['id']
+        Tag.new(tag_data['_default'])
+      end.compact
+    else
+      []
+    end
   end
 
   def self.count

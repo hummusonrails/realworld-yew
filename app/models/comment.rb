@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Comment
   include ActiveModel::Model
   attr_accessor :id, :body, :author_id, :created_at, :updated_at, :article_id, :type
@@ -34,11 +36,13 @@ class Comment
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
     options.positional_parameters([id])
-    result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = ? LIMIT 1", options)
-    if result.rows.any?
-      row = result.rows.first
-      Comment.new(row["_default"].merge('id' => row['id']))
-    end
+    result = cluster.query(
+      "SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'comment' AND `id` = ? LIMIT 1", options
+    )
+    return unless result.rows.any?
+
+    row = result.rows.first
+    Comment.new(row['_default'].merge('id' => row['id']))
   end
 
   def author

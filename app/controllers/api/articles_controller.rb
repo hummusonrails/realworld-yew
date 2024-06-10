@@ -1,21 +1,17 @@
+# frozen_string_literal: true
+
 module Api
   class ArticlesController < ApplicationController
-    before_action :authenticate_user, only: [:feed, :create, :update, :destroy, :favorite, :unfavorite]
+    before_action :authenticate_user, only: %i[feed create update destroy favorite unfavorite]
 
     def index
       articles = Article.all
 
-      if params[:tag]
-        articles = articles.select { |article| article.tag_list&.include?(params[:tag]) }
-      end
+      articles = articles.select { |article| article.tag_list&.include?(params[:tag]) } if params[:tag]
 
-      if params[:author]
-        articles = articles.select { |article| article.author&.username == params[:author] }
-      end
+      articles = articles.select { |article| article.author&.username == params[:author] } if params[:author]
 
-      if params[:favorited]
-        articles = articles.select { |article| article.favorited_by?(params[:favorited]) }
-      end
+      articles = articles.select { |article| article.favorited_by?(params[:favorited]) } if params[:favorited]
 
       articles = articles.drop(params[:offset].to_i) if params[:offset]
       articles = articles.take(params[:limit].to_i) if params[:limit]

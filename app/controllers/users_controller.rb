@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class UsersController < ApplicationController
-  before_action :authenticate_user, only: [:update, :show]
+  before_action :authenticate_user, only: %i[update show]
 
   def new
     @user = User.new
@@ -44,7 +46,7 @@ class UsersController < ApplicationController
         end
       end
     else
-      Rails.logger.debug "User authentication failed"
+      Rails.logger.debug 'User authentication failed'
       respond_to do |format|
         format.json { render json: { errors: ['Invalid email or password'] }, status: :unprocessable_entity }
         format.html do
@@ -79,7 +81,7 @@ class UsersController < ApplicationController
   end
 
   def update
-    if current_user && current_user.update(user_params)
+    if current_user&.update(user_params)
       respond_to do |format|
         format.html { redirect_to profile_path(current_user.username), notice: 'User updated successfully.' }
         format.json { render json: { user: current_user.to_hash } }

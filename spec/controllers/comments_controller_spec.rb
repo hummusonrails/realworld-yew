@@ -1,18 +1,34 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 require 'couchbase'
 require 'jwt'
 
 RSpec.describe CommentsController, type: :controller do
-  let(:current_user) { User.new(id: 'user-id', username: 'testuser', email: 'test@example.com', password_digest: BCrypt::Password.create('password')) }
-  let(:article) { Article.new(id: 'article-id', slug: 'test-title', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: current_user.id) }
-  let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: current_user.id, article_id: article.id, type: 'comment') }
+  let(:current_user) do
+    User.new(id: 'user-id', username: 'testuser', email: 'test@example.com',
+             password_digest: BCrypt::Password.create('password'))
+  end
+  let(:article) do
+    Article.new(id: 'article-id', slug: 'test-title', title: 'Test Title', description: 'Test Description',
+                body: 'Test Body', tag_list: 'tag1,tag2', author_id: current_user.id)
+  end
+  let(:comment) do
+    Comment.new(id: 'comment-id', body: 'Test Comment', author_id: current_user.id, article_id: article.id,
+                type: 'comment')
+  end
   let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
 
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
-  let(:query_result_user) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => current_user.to_hash, 'id' => current_user.id }]) }
-  let(:query_result_comment) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => comment.to_hash, 'id' => comment.id }]) }
+  let(:query_result_user) do
+    instance_double(Couchbase::Cluster::QueryResult,
+                    rows: [{ '_default' => current_user.to_hash, 'id' => current_user.id }])
+  end
+  let(:query_result_comment) do
+    instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => comment.to_hash, 'id' => comment.id }])
+  end
   let(:user_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [current_user.id]) }
   let(:comment_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [comment.id]) }
   let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }

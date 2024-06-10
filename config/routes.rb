@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   namespace :api do
     post 'users/login', to: 'users#login'
@@ -20,13 +22,13 @@ Rails.application.routes.draw do
         post 'favorite'
         delete 'unfavorite'
       end
-      resources :comments, only: [:create, :index, :destroy], param: :id
+      resources :comments, only: %i[create index destroy], param: :id
     end
 
     get 'tags', to: 'tags#index'
   end
 
-  resources :users, only: [:create, :new] do
+  resources :users, only: %i[create new] do
     collection do
       post 'login', to: 'users#login'
       get 'login', to: 'users#login_form'
@@ -53,7 +55,7 @@ Rails.application.routes.draw do
       post 'favorite', to: 'articles#favorite'
       delete 'unfavorite', to: 'articles#unfavorite'
     end
-    resources :comments, only: [:create, :destroy, :index], param: :id do
+    resources :comments, only: %i[create destroy index], param: :id do
       member do
         delete '', to: 'comments#destroy'
       end

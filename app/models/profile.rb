@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Profile
   include ActiveModel::Model
   attr_accessor :id, :username, :email, :password_digest, :bio, :image, :following, :type, :favorites
