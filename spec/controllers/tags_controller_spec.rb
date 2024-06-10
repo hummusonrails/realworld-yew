@@ -9,14 +9,14 @@ RSpec.describe TagsController, type: :controller do
   let(:cluster) { instance_double(Couchbase::Cluster) }
 
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
+    mock_couchbase_methods
+
+    allow(mock_bucket).to receive(:default_collection).and_return(mock_collection)
   end
 
   describe 'GET #index' do
     it 'returns all tags' do
-      allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'tag'").and_return(query_result)
+      allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'tag'").and_return(query_result)
 
       get :index, as: :json
 

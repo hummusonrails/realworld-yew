@@ -4,21 +4,18 @@ require 'couchbase'
 RSpec.describe Tag, type: :model do
   let(:tag) { Tag.new(id: 'tag-id', name: 'Example Tag', type: 'tag') }
 
-  let(:bucket) { instance_double(Couchbase::Bucket) }
-  let(:collection) { instance_double(Couchbase::Collection) }
-  let(:cluster) { instance_double(Couchbase::Cluster) }
-  let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [{'count' => 0}]) }
-
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
+    mock_couchbase_methods
+
+    allow(Tag).to receive(:find).with('tag-id').and_return(tag)
+    allow(mock_collection).to receive(:upsert)
+    allow(mock_cluster).to receive(:query).and_return(instance_double(Couchbase::Cluster::QueryResult, rows: [tag.to_hash]))
   end
 
   describe '#save' do
     context 'when saving a new tag' do
       it 'creates a new tag in the database' do
-        allow(collection).to receive(:upsert).with(tag.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(tag.id, hash_including(
           'name' => 'Example Tag',
           'type' => 'tag'
         ))
@@ -31,20 +28,20 @@ RSpec.describe Tag, type: :model do
 
     context 'when updating an existing tag' do
       it 'updates the tag in the database' do
-        allow(collection).to receive(:upsert).with(tag.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(tag.id, hash_including(
           'name' => 'Example Tag',
           'type' => 'tag'
         ))
         tag.save
 
         tag.name = 'Updated Tag'
-        allow(collection).to receive(:upsert).with(tag.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(tag.id, hash_including(
           'name' => 'Updated Tag',
           'type' => 'tag'
         ))
         tag.save
 
-        allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE META().id = $1 AND `type` = 'tag'", [tag.id]).and_return(instance_double(Couchbase::Cluster::QueryResult, rows: [tag.to_hash]))
+        allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE META().id = $1 AND `type` = 'tag'", [tag.id]).and_return(instance_double(Couchbase::Cluster::QueryResult, rows: [tag.to_hash]))
 
         expect(Tag.find(tag.id).name).to eq('Updated Tag')
       end

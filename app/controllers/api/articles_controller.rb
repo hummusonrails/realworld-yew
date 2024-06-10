@@ -3,13 +3,29 @@ module Api
     before_action :authenticate_user, only: [:feed, :create, :update, :destroy, :favorite, :unfavorite]
 
     def index
-      @articles = Article.all
-      render json: { articles: @articles.map(&:to_hash) }
+      articles = Article.all
+
+      if params[:tag]
+        articles = articles.select { |article| article.tag_list&.include?(params[:tag]) }
+      end
+
+      if params[:author]
+        articles = articles.select { |article| article.author&.username == params[:author] }
+      end
+
+      if params[:favorited]
+        articles = articles.select { |article| article.favorited_by?(params[:favorited]) }
+      end
+
+      articles = articles.drop(params[:offset].to_i) if params[:offset]
+      articles = articles.take(params[:limit].to_i) if params[:limit]
+
+      render json: { articles: articles.map(&:to_hash) }
     end
 
     def feed
-      @articles = current_user.feed
-      render json: { articles: @articles.map(&:to_hash) }
+      articles = current_user.feed
+      render json: { articles: articles.map(&:to_hash) }
     end
 
     def show
@@ -22,12 +38,12 @@ module Api
     end
 
     def create
-      @article = Article.new(article_params)
-      @article.author_id = current_user.id
-      if @article.save
-        render json: { article: @article.to_hash }, status: :created
+      article = Article.new(article_params)
+      article.author_id = current_user.id
+      if article.save
+        render json: { article: article.to_hash }, status: :created
       else
-        render json: { errors: @article.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
       end
     end
 
@@ -71,7 +87,7 @@ module Api
     private
 
     def article_params
-      params.require(:article).permit(:title, :description, :body, tagList: [])
+      params.require(:article).permit(:title, :description, :body, tag_list: [])
     end
   end
 end
