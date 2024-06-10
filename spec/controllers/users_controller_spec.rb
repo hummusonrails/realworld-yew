@@ -15,12 +15,12 @@ RSpec.describe UsersController, type: :controller do
   let(:query_result_options) { instance_double(Couchbase::Options::Query, positional_parameters: [current_user.id]) }
 
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
-    allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-    allow(collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
-    allow(collection).to receive(:upsert)
+    mock_couchbase_methods
+
+    allow(mock_bucket).to receive(:default_collection).and_return(mock_collection)
+    allow(mock_collection).to receive(:get).with(current_user.id).and_return(get_result)
+    allow(mock_collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
+    allow(mock_collection).to receive(:upsert)
     allow(article).to receive(:author).and_return(current_user)
     allow(User).to receive(:new).and_return(current_user)
     allow(User).to receive(:find_by_email).and_return(current_user)
@@ -110,8 +110,8 @@ RSpec.describe UsersController, type: :controller do
   describe 'PUT #update' do
     context 'when authenticated' do
       it 'updates the current user and returns the updated user' do
-        allow(collection).to receive(:get).with(current_user.id).and_return(get_result)
-        allow(collection).to receive(:upsert).and_return(true)
+        allow(mock_collection).to receive(:get).with(current_user.id).and_return(get_result)
+        allow(mock_collection).to receive(:upsert).and_return(true)
 
         updated_attributes = { username: 'updateduser', bio: 'Updated bio' }
         allow(current_user).to receive(:update).and_wrap_original do |m, *args|

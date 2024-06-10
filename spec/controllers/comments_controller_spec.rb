@@ -11,18 +11,17 @@ RSpec.describe CommentsController, type: :controller do
   let(:bucket) { instance_double(Couchbase::Bucket) }
   let(:collection) { instance_double(Couchbase::Collection) }
   let(:cluster) { instance_double(Couchbase::Cluster) }
-  let(:query_result_user) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => user.to_hash, 'id' => user.id }]) }
+  let(:query_result_user) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => current_user.to_hash, 'id' => current_user.id }]) }
   let(:query_result_comment) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => comment.to_hash, 'id' => comment.id }]) }
-  let(:user_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [user.id]) }
+  let(:user_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [current_user.id]) }
   let(:comment_query_options) { instance_double(Couchbase::Options::Query, positional_parameters: [comment.id]) }
-  let(:get_result) { instance_double(Couchbase::GetResult, content: user.to_hash) }
+  let(:get_result) { instance_double(Couchbase::Collection::GetResult, content: current_user.to_hash) }
 
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
+    mock_couchbase_methods
 
-    allow(collection).to receive(:upsert)
+    allow(mock_bucket).to receive(:default_collection).and_return(mock_collection)
+    allow(mock_collection).to receive(:upsert)
 
     allow(User).to receive(:find).and_return(current_user)
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
@@ -84,7 +83,7 @@ RSpec.describe CommentsController, type: :controller do
       it 'deletes the comment' do
         allow(Article).to receive(:find_by_slug).with('test-title').and_return(article)
         allow(Comment).to receive(:find).with('comment-id').and_return(comment)
-        allow(collection).to receive(:remove).with('comment-id').and_return(true)
+        allow(mock_collection).to receive(:remove).with('comment-id').and_return(true)
 
         delete :destroy, params: { article_id: 'test-title', id: 'comment-id' }
 

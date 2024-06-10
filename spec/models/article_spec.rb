@@ -5,29 +5,24 @@ RSpec.describe Article, type: :model do
   let(:author) { User.new(id: 'author-id', username: 'author', email: 'author@example.com') }
   let(:article) { Article.new(id: 'article-id', title: 'Test Title', description: 'Test Description', body: 'Test Body', tag_list: 'tag1,tag2', author_id: author.id, favorites: [], favorites_count: 0) }
   let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: 'author-id', article_id: article.id) }
-
-  let(:bucket) { instance_double(Couchbase::Bucket) }
-  let(:collection) { instance_double(Couchbase::Collection) }
-  let(:cluster) { instance_double(Couchbase::Cluster) }
   let(:options) do
     instance_double(Couchbase::Options::Query, positional_parameters: ['test-title'])
   end
   let(:query_result) { instance_double(Couchbase::Cluster::QueryResult, rows: [{ '_default' => { 'title' => 'Test Title', 'description' => 'Test Description', 'body' => 'Test Body', 'author_id' => 'user-id', 'type' => 'article' }, 'id' => 'article-id' }]) }
 
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
+    mock_couchbase_methods
+
     allow(Couchbase::Options::Query).to receive(:new).and_return(options)
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options).and_return(query_result)
-    allow(cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'").and_return(query_result)
+    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `slug` = ? LIMIT 1", options).and_return(query_result)
+    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article'").and_return(query_result)
     allow(User).to receive(:find).with('author-id').and_return(author)
   end
 
   context 'when saving an article' do
     describe '#save' do
       it 'creates a new article record in the database' do
-        allow(collection).to receive(:upsert).with(article.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(article.id, hash_including(
           'type' => 'article',
           'author_id' => 'author-id',
           'body' => 'Test Body',
@@ -86,7 +81,7 @@ RSpec.describe Article, type: :model do
 
   context 'when dealing with comments' do
     before do
-      allow(collection).to receive(:upsert).with(comment.id, hash_including(
+      allow(mock_collection).to receive(:upsert).with(comment.id, hash_including(
         'type' => 'comment',
         'author_id' => 'author-id',
         'body' => 'Test Comment',
@@ -97,7 +92,7 @@ RSpec.describe Article, type: :model do
 
     describe '#comments' do
       it 'returns all comments for the article' do
-        allow(collection).to receive(:upsert).with(article.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(article.id, hash_including(
           'author_id' => 'author-id',
           'body' => 'Test Body',
           'description' => 'Test Description',
@@ -113,7 +108,7 @@ RSpec.describe Article, type: :model do
 
     describe '#add_comment' do
       it 'adds a comment to the article' do
-        allow(collection).to receive(:upsert).with(article.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(article.id, hash_including(
           'author_id' => 'author-id',
           'body' => 'Test Body',
           'description' => 'Test Description',

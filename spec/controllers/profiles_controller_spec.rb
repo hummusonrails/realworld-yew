@@ -10,14 +10,18 @@ RSpec.describe ProfilesController, type: :controller do
   let(:cluster) { instance_double(Couchbase::Cluster) }
   let(:token) { JWT.encode({ user_id: current_user.id }, Rails.application.secret_key_base) }
   let(:lookup_in_result) { instance_double(Couchbase::Collection::LookupInResult, content: [], exists?: true) }
+  let(:query_result_articles) { instance_double(Couchbase::Cluster::QueryResult, rows: []) }
 
   before do
+    mock_couchbase_methods
+
     allow(User).to receive(:find_by_username).with('currentuser').and_return(current_user)
     allow(User).to receive(:find_by_username).with('otheruser').and_return(other_user)
     allow(User).to receive(:find).with(current_user.id).and_return(current_user)
-    allow(collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
-    allow(collection).to receive(:lookup_in).with(other_user.id, anything).and_return(lookup_in_result)
-    allow(collection).to receive(:mutate_in)
+    allow(mock_collection).to receive(:lookup_in).with(current_user.id, anything).and_return(lookup_in_result)
+    allow(mock_collection).to receive(:lookup_in).with(other_user.id, anything).and_return(lookup_in_result)
+    allow(mock_collection).to receive(:mutate_in)
+    allow(mock_cluster).to receive(:query).with("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `type` = 'article' AND `author_id` = ?", anything).and_return(query_result_articles)
     allow(JWT).to receive(:decode).and_return([{ 'user_id' => current_user.id }])
     request.headers['Authorization'] = "Bearer #{token}"
     allow(controller).to receive(:current_user).and_return(current_user)
@@ -53,7 +57,6 @@ RSpec.describe ProfilesController, type: :controller do
         allow(current_user).to receive(:follow).with(other_user).and_return(true)
 
         post :follow, params: { username: 'otheruser' }
-        puts response.body
 
         expect(response).to have_http_status(:found)
       end

@@ -59,13 +59,12 @@ class User
     end
   end
 
-
   def self.find_by_username(username)
     cluster = Rails.application.config.couchbase_cluster
     options = Couchbase::Options::Query.new
     options.positional_parameters([username])
     result = cluster.query("SELECT META().id, * FROM RealWorldRailsBucket.`_default`.`_default` WHERE `username` = ? LIMIT 1", options)
-    puts result
+
     if result.rows.any?
       row = result.rows.first
       User.new(row["_default"].merge('id' => row['id']))
@@ -195,6 +194,11 @@ class User
 
     favorites = result.content(0) rescue []
     favorites.include?(article.id)
+  end
+
+  def favorited_by?(username)
+    user = User.find_by_username(username)
+    user.favorites.include?(self.id)
   end
 
   def articles

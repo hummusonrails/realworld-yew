@@ -11,16 +11,15 @@ RSpec.describe Comment, type: :model do
   let(:comment) { Comment.new(id: 'comment-id', body: 'Test Comment', author_id: 'author-id', article_id: 'article-id', type: 'comment') }
 
   before do
-    allow(Rails.application.config).to receive(:couchbase_bucket).and_return(bucket)
-    allow(Rails.application.config).to receive(:couchbase_cluster).and_return(cluster)
-    allow(bucket).to receive(:default_collection).and_return(collection)
+    mock_couchbase_methods
+
     allow(User).to receive(:find).with('author-id').and_return(author)
   end
 
   describe '#save' do
     context 'when saving a new comment' do
       it 'creates a new comment in the database' do
-        allow(collection).to receive(:upsert).with(comment.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(comment.id, hash_including(
           'type' => 'comment',
           'body' => 'Test Comment',
           'author_id' => 'author-id',
@@ -33,7 +32,7 @@ RSpec.describe Comment, type: :model do
     context 'when updating an existing comment' do
       it 'updates the comment in the database' do
         comment.id = 'comment-id'
-        allow(collection).to receive(:upsert).with(comment.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(comment.id, hash_including(
           'type' => 'comment',
           'body' => 'Test Comment',
           'author_id' => 'author-id',
@@ -42,7 +41,7 @@ RSpec.describe Comment, type: :model do
         comment.save
 
         comment.body = 'Updated Comment'
-        allow(collection).to receive(:upsert).with(comment.id, hash_including(
+        allow(mock_collection).to receive(:upsert).with(comment.id, hash_including(
           'type' => 'comment',
           'body' => 'Updated Comment',
           'author_id' => 'author-id',
