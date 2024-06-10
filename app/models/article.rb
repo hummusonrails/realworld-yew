@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Article
   include ActiveModel::Model
   attr_accessor :id, :slug, :title, :description, :body, :tag_list, :created_at, :updated_at, :author_id, :type,
@@ -129,7 +131,7 @@ class Article
   def generate_slug(title)
     return nil if title.nil?
 
-    @slug ||= title.parameterize(separator: '-')
+    @generate_slug ||= title.parameterize(separator: '-')
   end
 
   def author

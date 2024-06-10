@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Comment
   include ActiveModel::Model
   attr_accessor :id, :body, :author_id, :created_at, :updated_at, :article_id, :type

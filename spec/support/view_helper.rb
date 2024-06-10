@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # spec/support/view_helper.rb
 module ViewHelper
   def stub_image_tag

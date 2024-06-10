@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CouchbaseMock
   def self.included(base)
     base.before do

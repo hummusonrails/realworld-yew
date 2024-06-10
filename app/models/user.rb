@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class User
   include ActiveModel::Model
   attr_accessor :id, :username, :email, :password_digest, :bio, :image, :type, :password, :following, :favorites
