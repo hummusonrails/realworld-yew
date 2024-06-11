@@ -152,7 +152,7 @@ class User
 
   def favorite(article)
     bucket = Rails.application.config.couchbase_bucket
-    bucket.default_collection
+    collection = bucket.default_collection
 
     exists_result = collection.lookup_in(id, [Couchbase::LookupInSpec.exists('favorites')])
     unless exists_result.exists?(0)
