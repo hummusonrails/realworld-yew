@@ -6,6 +6,11 @@ module Api
     helper_method :authenticate_user
 
     def authenticate_user
+      unless request.headers['Authorization']
+        render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+        return
+      end
+
       token = request.headers['Authorization'].split(' ').last
       begin
         decoded = JWT.decode(token, Rails.application.secret_key_base).first

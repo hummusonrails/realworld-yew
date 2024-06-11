@@ -16,8 +16,9 @@ module Api
     def create
       article = Article.find_by_slug(params[:article_slug])
       if article
-        comment = article.comments.new(comment_params)
-        comment.author_id = current_user.id
+        comment = Comment.new(comment_params)
+        comment.author_id = @current_user.id
+        article.add_comment(comment)
         if comment.save
           render json: { comment: comment.to_hash }, status: :created
         else
@@ -30,8 +31,19 @@ module Api
 
     def destroy
       article = Article.find_by_slug(params[:article_slug])
-      comment = article.comments.find(params[:id]) if article
-      if comment && comment.author_id == current_user.id
+      comment = Comment.find(params[:id]) if article
+
+      unless article
+        render json: { errors: ['Article not found'] }, status: :not_found
+        return
+      end
+
+      unless comment
+        render json: { errors: ['Comment not found'] }, status: :not_found
+        return
+      end
+
+      if comment && comment.author_id == @current_user.id
         comment.destroy
         render json: { message: 'Comment deleted successfully' }, status: :ok
       else
