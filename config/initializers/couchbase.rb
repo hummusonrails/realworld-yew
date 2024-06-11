@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'couchbase'
-include Couchbase
+include Couchbase # rubocop:disable Style/MixinUsage
 require 'dotenv'
 Dotenv.load
 
